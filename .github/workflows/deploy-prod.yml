@@ -16,7 +16,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # GitHub bez reguły required_reviewers uruchomiłby deploy bez akceptacji.
+  # Plan konta może jej nie obsługiwać w repo prywatnym, dlatego brak reguły blokuje deploy.
+  bramka:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - name: Wymagana akceptacja w environment production
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          reguly="$(gh api "repos/$GITHUB_REPOSITORY/environments/production" \
+            --jq '[.protection_rules[]?.type] | join(",")')"
+          echo "Reguły production: ${reguly:-brak}"
+          case ",$reguly," in
+            *,required_reviewers,*) ;;
+            *)
+              echo "::error::Environment production nie ma wymaganej akceptacji. Deploy zablokowany."
+              exit 1
+              ;;
+          esac
+
   deploy:
+    needs: bramka
     runs-on: ubuntu-latest
     environment: production
     steps:

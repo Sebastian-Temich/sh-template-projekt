@@ -21,6 +21,9 @@ pliki. Ustawienia repo trzeba założyć w każdym projekcie osobno, więc `shct
 
 Projekty klientów są domyślnie prywatne.
 
+Workflow `deploy-prod` ma job `bramka`: bez reguły `required_reviewers` w environment `production`
+deploy nie startuje. GitHub odrzuca tę regułę dla prywatnych repo, gdy plan konta jej nie obsługuje.
+
 ## Zawartość
 
 | Ścieżka | Zawartość |
