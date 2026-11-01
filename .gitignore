@@ -1,0 +1,24 @@
+# Sekrety
+.env*
+!.env.example
+
+# Claude Code
+.claude/settings.local.json
+
+# Zależności i artefakty
+node_modules/
+.pnpm-store/
+.venv/
+__pycache__/
+.next/
+dist/
+build/
+coverage/
+playwright-report/
+test-results/
+supabase/.temp/
+supabase/.branches/
+
+# System i edytory
+.DS_Store
+.obsidian/workspace*

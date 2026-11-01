@@ -1,0 +1,57 @@
+name: Zadanie
+description: Zadanie dla workera lub zlecenie trybu S
+labels: ["status:todo", "runner:local", "wykonawca:claude"]
+body:
+  - type: textarea
+    id: cel
+    attributes:
+      label: Cel
+      description: Co ma działać po zakończeniu zadania i po co.
+    validations:
+      required: true
+  - type: textarea
+    id: kryteria
+    attributes:
+      label: Kryteria akceptacji
+      description: Sprawdzalne punkty. Review weryfikuje każdy z nich.
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: zakres
+    attributes:
+      label: Zakres
+      description: Obszar kodu i docs tego zadania, oraz co jest poza zakresem.
+    validations:
+      required: true
+  - type: dropdown
+    id: typ
+    attributes:
+      label: Typ
+      description: Orkiestrator przenosi wybór na etykietę typ:*.
+      options:
+        - feature
+        - bug
+        - qa
+        - docs
+        - cr
+    validations:
+      required: true
+  - type: input
+    id: zaleznosci
+    attributes:
+      label: Zależności
+      description: Numery issue, które muszą być zamknięte wcześniej.
+      placeholder: "#12, #15"
+  - type: checkboxes
+    id: baza
+    attributes:
+      label: Baza danych
+      options:
+        - label: Zadanie zawiera migrację lub reset bazy (etykieta db:migracja, realizacja pojedynczo)
+  - type: textarea
+    id: uwagi
+    attributes:
+      label: Uwagi
+      description: Bez sekretów.

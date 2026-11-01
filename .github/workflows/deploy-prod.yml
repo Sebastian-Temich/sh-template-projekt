@@ -1,0 +1,31 @@
+name: Deploy produkcyjny
+
+on:
+  workflow_dispatch:
+    inputs:
+      wersja:
+        description: Tag lub commit do wdrożenia
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.wersja }}
+      - name: Migracje bazy (placeholder)
+        run: echo "Placeholder. Migracje produkcyjne zależne od hostingu projektu."
+      - name: Deploy aplikacji (placeholder)
+        run: echo "Placeholder. Deploy zależny od hostingu projektu."
+      - name: Smoke test (placeholder)
+        run: echo "Placeholder. Test dymny produkcji."

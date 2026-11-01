@@ -1,0 +1,26 @@
+---
+zadania_todo: 0
+zadania_in_progress: 0
+zadania_review: 0
+zadania_blocked: 0
+zadania_escalated: 0
+zadania_done: 0
+zadania_anulowane: 0
+pr_otwarte: 0
+ci_fail: 0
+ostatnia_synchronizacja: brak
+---
+
+# Status projektu
+
+Plik wspólny, aktualizuje orkiestrator. Liczniki we frontmatterze zapisuje `scripts/sync-status.sh`.
+
+## Bieżący etap
+
+(brak)
+
+## Punkt przekazania
+
+Stan po ostatnim kamieniu milowym, potrzebny do wznowienia po `/clear` i „wznów”.
+
+(brak)
