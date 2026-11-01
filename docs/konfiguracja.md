@@ -17,7 +17,7 @@ modele:
   status: opus
   reviewer:
     narzedzie: codex
-    model: domyslny
+    model: GPT-6.1 Terra
     rozumowanie: high
 hosting:
   aplikacja: vercel
