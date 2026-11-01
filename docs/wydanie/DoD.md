@@ -14,6 +14,7 @@ iteracja: 0
 - [ ] `architektoniczna/` zawiera dokumentację
 <!-- /tylko-tryb -->
 - [ ] `CHANGELOG.md` obejmuje wszystkie zadania
+- [ ] `techniczna/` zawiera listę migracji i plan rollbacku
 
 ## Funkcjonalność
 

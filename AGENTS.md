@@ -81,7 +81,8 @@ Każde zadanie kończy się raportem `docs/07-realizacja/T-NR.md`, szablon:
 - **Drobne uwagi** (orkiestrator przenosi do `backlog-drobne.md`),
 - **Propozycje dla systemu** (orkiestrator zbiera do `sh-system/docs/propozycje.md`).
 
-DoD zadania: kryteria z issue spełnione, testy zielone, raport `T-NR.md`, brak sekretów.
+DoD zadania: kryteria z issue spełnione, testy zielone, raport `T-NR.md`, brak sekretów, migracje
+zgodne wstecz.
 
 ## Review i iteracje
 
@@ -89,6 +90,12 @@ DoD zadania: kryteria z issue spełnione, testy zielone, raport `T-NR.md`, brak 
 - 🔴 krytyczne i 🟡 istotne blokują. ⚪ drobne trafiają do `backlog-drobne.md`.
 - Maks. 3 iteracje. Licznik podbija orkiestrator, wyłącznie po FAIL review.
 - Przerwanie przez limit nie podbija licznika. Po 3. FAIL następuje eskalacja.
+
+## Migracje
+
+Migracje są zgodne wstecz: poprzednia wersja aplikacji musi działać na nowym schemacie (expand/contract).
+Najpierw dodajesz, potem przenosisz użycie, a usuwasz dopiero w kolejnym wydaniu. Nie zmieniasz
+istniejących plików migracji.
 
 ## Eskalacje
 
@@ -111,7 +118,8 @@ powiadomienie. Eskalacja nie zatrzymuje zadań niezależnych.
 - Na serwerze i w GitHub Secrets nie ma żadnych poświadczeń produkcyjnych. Nie szukasz ich, nie
   prosisz o nie i nie dodajesz ich tam.
 - Produkcję wdraża wyłącznie właściciel ze swojego urządzenia przez `scripts/deploy-prod.sh`.
-  Workflow `deploy-prod` jest zablokowany. W pilocie nie ma deployów produkcyjnych.
+  Workflow `deploy-prod` jest zablokowany. W etapie A nie ma deployów produkcyjnych.
+- GitHub Secrets zawiera tylko `STAGING_DB_URL`. Staging migruje CI po pushu na `main`.
 - Gdy znajdziesz sekret w repo, przerywasz i eskalujesz. Nie próbujesz go usuwać z historii sam.
 
 ## Bezpieczeństwo publicznych repo

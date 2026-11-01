@@ -12,6 +12,17 @@ Wykonuje wyłącznie właściciel ze swojego urządzenia przez `scripts/deploy-p
 
 ## Baza danych i migracje
 
-## Monitoring i rollback
+## Lista migracji
+
+| Migracja | Co zmienia | Zgodna wstecz | Faza (expand/contract) |
+|---|---|---|---|
+
+## Plan rollbacku
+
+- Wersja aplikacji do cofnięcia: poprzednie wdrożenie w Vercel (URL).
+- Baza: migracja naprawcza albo backup z `scripts/deploy-prod.sh`.
+- Kiedy cofamy i kto decyduje:
+
+## Monitoring
 
 ## Znane ograniczenia

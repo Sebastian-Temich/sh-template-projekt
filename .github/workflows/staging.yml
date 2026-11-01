@@ -1,0 +1,34 @@
+# Migracje bazy staging po każdym pushu na main. STAGING_DB_URL to connection string jednej bazy
+# staging, a nie token konta. Poświadczeń produkcyjnych tu nie ma (proces-v1.md, „Droga na produkcję”).
+
+name: Staging
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-db
+  cancel-in-progress: false
+
+jobs:
+  migracje:
+    runs-on: ubuntu-24.04
+    env:
+      STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
+    steps:
+      - name: Brak sekretu
+        if: env.STAGING_DB_URL == ''
+        run: echo "::notice::Brak sekretu STAGING_DB_URL, migracje staging pominięte."
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: env.STAGING_DB_URL != ''
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        if: env.STAGING_DB_URL != ''
+        with:
+          version: 2.121.0
+      - name: Migracje staging
+        if: env.STAGING_DB_URL != ''
+        run: supabase db push --db-url "$STAGING_DB_URL" --yes
