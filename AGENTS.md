@@ -108,8 +108,10 @@ powiadomienie. Eskalacja nie zatrzymuje zadań niezależnych.
 - Sekrety nie trafiają do repo, docs, issue, PR, raportów ani logów.
 - Lokalnie są w `.env.local`, który zawiera wyłącznie klucze testowe. Nowe zmienne dopisujesz do
   `.env.example` bez wartości.
-- Nie masz dostępu do produkcji. Produkcja zmienia się wyłącznie przez workflow `deploy-prod` z
-  akceptacją właściciela (environment `production`).
+- Na serwerze i w GitHub Secrets nie ma żadnych poświadczeń produkcyjnych. Nie szukasz ich, nie
+  prosisz o nie i nie dodajesz ich tam.
+- Produkcję wdraża wyłącznie właściciel ze swojego urządzenia przez `scripts/deploy-prod.sh`.
+  Workflow `deploy-prod` jest zablokowany. W pilocie nie ma deployów produkcyjnych.
 - Gdy znajdziesz sekret w repo, przerywasz i eskalujesz. Nie próbujesz go usuwać z historii sam.
 
 ## Bezpieczeństwo publicznych repo

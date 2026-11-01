@@ -18,7 +18,7 @@ iteracja: 0
 ## Funkcjonalność
 
 - [ ] Aplikacja uruchamia się według dokumentacji technicznej
-- [ ] Wdrożenie przechodzi przez workflow `deploy-prod` z akceptacją właściciela
+- [ ] Wdrożenie przez `scripts/deploy-prod.sh` jest opisane dla właściciela (w pilocie bez deployu prod)
 
 ## Checklisty jakości
 

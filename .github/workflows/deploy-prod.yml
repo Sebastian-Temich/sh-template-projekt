@@ -1,3 +1,13 @@
+# Ten workflow jest celowo zablokowany. Produkcję wdraża wyłącznie właściciel ze swojego urządzenia
+# przez scripts/deploy-prod.sh.
+#
+# Dlaczego:
+# - GitHub nie oferuje wymaganej akceptacji dla environment w repo prywatnych bez Enterprise;
+# - agenci używają tokenu właściciela, więc bramka po stronie GitHuba ich nie powstrzyma;
+# - na serwerze i w GitHub Secrets nie ma poświadczeń produkcyjnych, więc nie ma ich też tutaj.
+#
+# Nie zdejmuj bramki bez zmiany procesu w sh-system/docs/proces-v1.md.
+
 name: Deploy produkcyjny
 
 on:
@@ -11,36 +21,18 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: deploy-prod
-  cancel-in-progress: false
-
 jobs:
-  # GitHub bez reguły required_reviewers uruchomiłby deploy bez akceptacji.
-  # Plan konta może jej nie obsługiwać w repo prywatnym, dlatego brak reguły blokuje deploy.
   bramka:
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
+    runs-on: ubuntu-24.04
     steps:
-      - name: Wymagana akceptacja w environment production
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Wdrożenie tylko przez scripts/deploy-prod.sh
         run: |
-          reguly="$(gh api "repos/$GITHUB_REPOSITORY/environments/production" \
-            --jq '[.protection_rules[]?.type] | join(",")')"
-          echo "Reguły production: ${reguly:-brak}"
-          case ",$reguly," in
-            *,required_reviewers,*) ;;
-            *)
-              echo "::error::Environment production nie ma wymaganej akceptacji. Deploy zablokowany."
-              exit 1
-              ;;
-          esac
+          echo "::error::Deploy z GitHub Actions jest zablokowany. Produkcję wdraża właściciel przez scripts/deploy-prod.sh."
+          exit 1
 
   deploy:
     needs: bramka
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: production
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

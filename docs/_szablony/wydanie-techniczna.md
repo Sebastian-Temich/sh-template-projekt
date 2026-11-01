@@ -8,7 +8,7 @@ Nazwy zmiennych, bez wartości.
 
 ## Wdrożenie
 
-Workflow `deploy-prod`, akceptacja właściciela.
+Wykonuje wyłącznie właściciel ze swojego urządzenia przez `scripts/deploy-prod.sh`.
 
 ## Baza danych i migracje
 

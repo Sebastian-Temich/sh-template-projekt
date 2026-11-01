@@ -59,6 +59,7 @@
       "Edit(docs/06-zadania/index.md)",
       "Edit(CHANGELOG.md)",
       "Edit(.github/workflows/deploy-prod.yml)",
+      "Edit(scripts/deploy-prod.sh)",
       "Edit(.claude/**)",
       "Edit(.env*)",
       "Read(.env.production*)",
