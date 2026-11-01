@@ -19,11 +19,20 @@ setup() {
   atrapa gh 'echo "${CI_WYNIK-success}"'
   atrapa docker 'exit 0'
   atrapa curl 'echo "curl $*" >>"$LOG"; exit "${CURL_RC:-0}"'
-  atrapa supabase 'echo "supabase $*" >>"$LOG"; exit 0'
+  atrapa supabase 'echo "supabase $*" >>"$LOG"
+case "$*" in *--role-only*) exit "${DUMP_RC:-0}" ;; esac
+exit 0'
   atrapa vercel 'echo "vercel $*" >>"$LOG"
 case "$1" in
-  list) echo "{\"deployments\":[{\"url\":\"kandydat.vercel.app\"}]}" ;;
+  list)
+    if [ -n "${BRAK_PREVIEW:-}" ]; then
+      echo "{\"deployments\":[]}"
+    else
+      echo "{\"deployments\":[{\"url\":\"kandydat.vercel.app\"}]}"
+    fi
+    ;;
   inspect) echo "{\"url\":\"poprzedni.vercel.app\"}" ;;
+  promote) exit "${PROMOTE_RC:-0}" ;;
 esac
 exit 0'
 
@@ -32,7 +41,7 @@ exit 0'
   export VERCEL_TOKEN=token-vercel VERCEL_ORG_ID=org VERCEL_PROJECT_ID=projekt
   export PROD_DB_URL=postgresql://prod-sekret PROD_DOMAIN=example.com
   export STAGING_DB_URL=postgresql://staging-sekret STAGING_DOMAIN=staging.example.com
-  unset SMOKE_PATH BACKUP_DIR CI_WYNIK CURL_RC
+  unset SMOKE_PATH BACKUP_DIR CI_WYNIK CURL_RC BRAK_PREVIEW PROMOTE_RC DUMP_RC
 
   git init -q --bare "$BATS_TEST_TMPDIR/origin.git"
   git clone -q "$BATS_TEST_TMPDIR/origin.git" "$BATS_TEST_TMPDIR/repo" 2>/dev/null
@@ -114,6 +123,14 @@ kolejnosc() {
   nie grep -q rollback "$LOG"
 }
 
+@test "brak wdrozenia preview dla commita przerywa przed baza" {
+  BRAK_PREVIEW=1 run bash deploy-prod.sh v1.2.3 --dry-run
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"brak gotowego wdrożenia preview dla $(git rev-parse HEAD)"* ]] || false
+  grep -q "vercel list --environment preview --status READY --meta githubCommitSha=$(git rev-parse HEAD)" "$LOG"
+  nie grep -qE 'supabase|promote' "$LOG"
+}
+
 @test "dry-run: wyjscie nie ujawnia poswiadczen" {
   CURL_RC=22 run bash deploy-prod.sh v1.2.3 --dry-run
   [[ "$output" != *"prod-sekret"* ]] || false
@@ -156,6 +173,66 @@ kolejnosc() {
   [ "$status" -eq 1 ]
   grep -q 'vercel rollback poprzedni.vercel.app --yes' "$LOG"
   [[ "$output" == *"Rollback bazy"* ]] || false
+}
+
+@test "prod: nieudany zrzut bazy zatrzymuje wdrozenie przed migracjami" {
+  export DUMP_RC=1
+  z_potwierdzeniem v1.2.3
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"backup się nie udał"* ]] || false
+  nie grep -qE 'schema.sql|data.sql|promote' "$LOG"
+  [ -z "$(grep 'supabase db push' "$LOG" | grep -v -- '--dry-run')" ]
+}
+
+@test "prod: awaria Vercela po migracjach podaje sposob ponowienia" {
+  export PROMOTE_RC=1
+  z_potwierdzeniem v1.2.3
+  [ "$status" -eq 1 ]
+  grep -q 'supabase db push --db-url postgresql://prod-sekret --yes' "$LOG"
+  [[ "$output" == *"baza zaktualizowana"* ]] || false
+  [[ "$output" == *"stara aplikacja działa dzięki migracjom zgodnym wstecz"* ]] || false
+  [[ "$output" == *"scripts/deploy-prod.sh v1.2.3 --tylko-aplikacja"* ]] || false
+  nie grep -qE '^curl|vercel rollback' "$LOG"
+}
+
+@test "prod: --tylko-aplikacja pomija backup i migracje" {
+  z_potwierdzeniem v1.2.3 --tylko-aplikacja
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"wdrożono v1.2.3 na prod"* ]] || false
+  grep -q 'vercel promote kandydat.vercel.app --yes' "$LOG"
+  grep -q 'supabase migration list' "$LOG"
+  grep -q '^curl ' "$LOG"
+  nie grep -q 'db dump' "$LOG"
+  [ -z "$(grep 'supabase db push' "$LOG" | grep -v -- '--dry-run')" ]
+}
+
+@test "prod: --tylko-aplikacja cofa aplikacje po bledzie smoke testu" {
+  export CURL_RC=22
+  z_potwierdzeniem v1.2.3 --tylko-aplikacja
+  [ "$status" -eq 1 ]
+  grep -q 'vercel rollback poprzedni.vercel.app --yes' "$LOG"
+  nie grep -q 'db dump' "$LOG"
+}
+
+@test "dry-run: --tylko-aplikacja opisuje tylko krok aplikacji" {
+  run bash deploy-prod.sh v1.2.3 --dry-run --tylko-aplikacja
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"[dry-run] wdrożenie kandydat.vercel.app na prod"* ]] || false
+  [[ "$output" != *"[dry-run] backup"* ]] || false
+  [[ "$output" != *"[dry-run] migracje"* ]] || false
+}
+
+@test "staging: awaria Vercela podaje ponowienie na stagingu" {
+  atrapa vercel 'echo "vercel $*" >>"$LOG"
+case "$1" in
+  list) echo "{\"deployments\":[{\"url\":\"kandydat.vercel.app\"}]}" ;;
+  inspect) echo "{\"url\":\"poprzedni.vercel.app\"}" ;;
+  alias) exit 1 ;;
+esac
+exit 0'
+  z_potwierdzeniem v1.2.3 --target staging
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"v1.2.3 --tylko-aplikacja --target staging"* ]] || false
 }
 
 @test "staging: proba rollbacku przepina domene z powrotem" {

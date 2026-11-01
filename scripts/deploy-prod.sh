@@ -2,9 +2,10 @@
 # Wdrożenie produkcyjne. Uruchamia wyłącznie właściciel, ze swojego urządzenia.
 # Na serwerze i w GitHub Secrets nie ma poświadczeń produkcyjnych (proces-v1.md, „Droga na produkcję”).
 #
-# Użycie: scripts/deploy-prod.sh vX.Y.Z [--dry-run] [--target prod|staging]
-#   --dry-run         wykonuje tylko odczyty (w tym smoke test), kroki zmieniające stan wypisuje
-#   --target staging  próba całej drogi na stagingu, także rollbacku
+# Użycie: scripts/deploy-prod.sh vX.Y.Z [--dry-run] [--target prod|staging] [--tylko-aplikacja]
+#   --dry-run          wykonuje tylko odczyty (w tym smoke test), kroki zmieniające stan wypisuje
+#   --target staging   próba całej drogi na stagingu, także rollbacku
+#   --tylko-aplikacja  ponowienie po awarii Vercela: bez backupu i migracji, stan migracji tylko pokazuje
 #
 # Zmienne: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID oraz
 #   prod:    PROD_DB_URL, PROD_DOMAIN
@@ -24,9 +25,11 @@ blad() {
 TAG=""
 DRY=0
 CEL=prod
+TYLKO_APLIKACJA=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY=1 ;;
+    --tylko-aplikacja) TYLKO_APLIKACJA=1 ;;
     --target)
       [ $# -ge 2 ] || blad "--target wymaga wartości"
       CEL="$2"
@@ -38,7 +41,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-[ -n "$TAG" ] || blad "użycie: $0 vX.Y.Z [--dry-run] [--target prod|staging]"
+[ -n "$TAG" ] || blad "użycie: $0 vX.Y.Z [--dry-run] [--target prod|staging] [--tylko-aplikacja]"
 [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || blad "tag '$TAG' nie jest wersją semver vX.Y.Z"
 
 case "$CEL" in
@@ -71,15 +74,16 @@ wykonaj() {
   "$@"
 }
 
+# Łańcuch &&, bo wywołanie stoi przed `||` i set -e tu nie działa.
 backup_bazy() {
-  mkdir -p "$BACKUP"
-  supabase db dump --db-url "$DB_URL" -f "$BACKUP/roles.sql" --role-only
-  supabase db dump --db-url "$DB_URL" -f "$BACKUP/schema.sql"
-  supabase db dump --db-url "$DB_URL" -f "$BACKUP/data.sql" --use-copy --data-only \
-    -x "storage.buckets_vectors" -x "storage.vector_indexes"
+  mkdir -p "$BACKUP" &&
+    supabase db dump --db-url "$DB_URL" -f "$BACKUP/roles.sql" --role-only &&
+    supabase db dump --db-url "$DB_URL" -f "$BACKUP/schema.sql" &&
+    supabase db dump --db-url "$DB_URL" -f "$BACKUP/data.sql" --use-copy --data-only \
+      -x "storage.buckets_vectors" -x "storage.vector_indexes"
 }
 
-# Produkcja: promocja preview, Vercel przebudowuje ten commit ze zmiennymi prod.
+# Produkcja: promocja preview, Vercel przebudowuje ten commit ze zmiennymi prod (README).
 # Staging nie ma promocji, więc próbę wykonuje przepięcie domeny.
 ustaw_wersje() {
   if [ "$CEL" = "prod" ]; then
@@ -144,14 +148,27 @@ if [ "$DRY" -eq 0 ]; then
 fi
 
 # 4. Backup i migracje
-BACKUP="${BACKUP_DIR:-$HOME/sh-backupy}/$CEL-$TAG-$(date -u +%Y%m%dT%H%M%SZ)"
-wykonaj "backup bazy $CEL do $BACKUP" backup_bazy || blad "backup się nie udał, nic nie wdrożono"
-wykonaj "migracje bazy $CEL" supabase db push --db-url "$DB_URL" --yes ||
-  blad "migracje się nie udały, aplikacja bez zmian; backup: $BACKUP"
+KATALOG_BACKUPOW="${BACKUP_DIR:-$HOME/sh-backupy}"
+if [ "$TYLKO_APLIKACJA" -eq 1 ]; then
+  BACKUP="ostatni backup w $KATALOG_BACKUPOW"
+  echo "--tylko-aplikacja: backup i migracje pominięte."
+else
+  BACKUP="$KATALOG_BACKUPOW/$CEL-$TAG-$(date -u +%Y%m%dT%H%M%SZ)"
+  wykonaj "backup bazy $CEL do $BACKUP" backup_bazy || blad "backup się nie udał, nic nie wdrożono"
+  wykonaj "migracje bazy $CEL" supabase db push --db-url "$DB_URL" --yes ||
+    blad "migracje się nie udały, aplikacja bez zmian; backup: $BACKUP"
+fi
 
 # 5. Aplikacja
-wykonaj "wdrożenie $KANDYDAT na $CEL" ustaw_wersje "$KANDYDAT" ||
-  blad "wdrożenie aplikacji się nie udało, baza po migracjach, aplikacja bez zmian; backup: $BACKUP"
+if ! wykonaj "wdrożenie $KANDYDAT na $CEL" ustaw_wersje "$KANDYDAT"; then
+  PONOW="scripts/deploy-prod.sh $TAG --tylko-aplikacja"
+  [ "$CEL" = "prod" ] || PONOW="$PONOW --target $CEL"
+  echo "BŁĄD: wdrożenie aplikacji przez Vercel się nie udało." >&2
+  echo "Stan: baza zaktualizowana, stara aplikacja działa dzięki migracjom zgodnym wstecz." >&2
+  echo "Po usunięciu awarii ponów: $PONOW" >&2
+  echo "Przekroczenie czasu nie przerywa promocji, sprawdź: vercel promote status. Backup: $BACKUP" >&2
+  exit 1
+fi
 
 # 6. Smoke test i rollback
 if curl -fsS -o /dev/null --max-time 15 --retry 5 --retry-delay 6 --retry-all-errors "$SMOKE_URL"; then

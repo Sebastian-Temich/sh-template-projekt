@@ -35,13 +35,14 @@ Robisz to raz na projekt, na swoim urządzeniu, na kontach klienta.
 3. Załóż osobny projekt Supabase staging.
 4. Zainstaluj i zaloguj Vercel CLI, Supabase CLI, `gh`, `jq` i Docker. Dump bazy działa w kontenerze.
    Na serwerze te CLI pozostają wylogowane.
-5. Wyłącz automatyczny deploy produkcyjny z `main`. W Vercel: Settings → Environments → Production →
-   Branch Tracking wpisz nazwę gałęzi, na którą nikt nie pushuje, np. `produkcja`, i zapisz. Każda
-   inna gałąź, także `main`, wdraża się jako preview.
+5. Ustaw gałąź produkcyjną. W Vercel: Settings → Environments → Production → Branch Tracking wpisz
+   `production` zamiast `main` i zapisz. Dzięki temu `main` wdraża się jako preview. Gałęzi
+   `production` nie zakładaj i nie pushuj na nią: każdy commit na tej gałęzi Vercel wdraża produkcyjnie.
    **Nie używaj** `git.deploymentEnabled: { "main": false }`: to wyłącza deploy z commitów na `main`,
    a wdrożenie preview `main` jest stagingiem i wersją do promocji.
 6. W Vercel ustaw zmienne. Production: wartości prod. Preview: wartości staging.
-7. Dodaj domenę prod, a domenę staging przypisz do gałęzi `main`.
+7. Dodaj domenę prod. Domenę staging przypisz do `main`: Settings → Domains → Edit → Connect to an
+   environment: Preview → Git Branch: `main`. To stały alias stagingu.
 8. W repo dodaj jeden sekret:
    `gh secret set STAGING_DB_URL`. To connection string bazy staging, a nie token konta. Użyj
    session poolera (IPv4), a znaki specjalne hasła zakoduj procentowo.
@@ -78,10 +79,33 @@ robi backup bazy, wykonuje migracje, promuje preview na produkcję i uruchamia s
 błędzie smoke testu cofa aplikację do poprzedniej wersji. Bazy nie cofa: migracje są zgodne wstecz, a
 rollback bazy to migracja naprawcza albo backup.
 
-Vercel przy promocji preview buduje ten sam commit od nowa ze zmiennymi Production, więc jest to ta
-sama wersja kodu co na stagingu, ale nowe wdrożenie.
-
 `--dry-run` wykonuje tylko odczyty, także smoke test bieżącej wersji.
+
+Gdy Vercel zawiedzie po migracjach, baza jest już zaktualizowana, a stara aplikacja działa dzięki
+migracjom zgodnym wstecz. Po usunięciu awarii ponów tylko krok aplikacji. Skrypt pokaże stan migracji,
+bez backupu i bez migracji, a w razie błędu smoke testu cofnie aplikację:
+
+```bash
+scripts/deploy-prod.sh v1.2.3 --tylko-aplikacja
+```
+
+### Promocja i rollback w Vercel: wynik sprawdzenia dokumentacji
+
+Sprawdzone 2026-11-01 w dokumentacji Vercel oraz w `vercel --help` i kodzie Vercel CLI 65.9.0.
+
+- **Promocja preview przebudowuje aplikację.** Dokumentacja:
+  [„through a complete rebuild”](https://vercel.com/docs/deployments/promoting-a-deployment), zmienne
+  zmieniają się z Preview na Production, a zmiennych preview nie można użyć w produkcji.
+  [`vercel promote`](https://vercel.com/docs/cli/promote) tworzy przy tym „a new production
+  deployment”. Na produkcji jest więc ten sam commit co na stagingu, ale nowy build. Build może się
+  nie udać albo dać inny wynik niż na stagingu, dlatego po promocji działa smoke test.
+- `--yes` pomija potwierdzenie promocji preview. Przekroczenie `--timeout` kończy tylko czekanie CLI,
+  promocja trwa dalej, a jej stan pokazuje `vercel promote status`.
+- **Rollback nie przebudowuje aplikacji.** [Stara wersja](https://vercel.com/docs/instant-rollback)
+  zachowuje swoje zmienne środowiskowe sprzed zmian w panelu. Celem może być tylko wdrożenie, które
+  było już produkcyjne. Na planie Hobby tylko poprzednie.
+- Po rollbacku Vercel wyłącza automatyczne przypisywanie domen produkcyjnych. Następne `vercel promote`
+  [włącza je z powrotem](https://vercel.com/docs/cli/rollback).
 
 ### Próba na stagingu
 
@@ -91,7 +115,8 @@ SMOKE_PATH=/nie-ma-takiej-strony scripts/deploy-prod.sh v1.2.3 --target staging
 ```
 
 Staging nie ma promocji Vercel, więc skrypt przepina domenę staging poleceniem `vercel alias set`.
-Drugie polecenie wymusza błąd smoke testu i sprawdza rollback. Kolejny push na `main` przywraca
+Drugie polecenie wymusza błąd smoke testu i sprawdza rollback. Pamiętaj, że każde przejście bez
+`--tylko-aplikacja` robi backup i migruje staging. Kolejny push na `main` przywraca
 domenę na najnowsze preview. Promocję i `vercel rollback` sprawdzisz dopiero na produkcji, dlatego
 przed pierwszym wydaniem zrób je na projekcie testowym.
 
