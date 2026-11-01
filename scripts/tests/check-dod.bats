@@ -120,7 +120,21 @@ zaznacz_wszystko() {
   mkdir "$ROOT/.husky"
   run bash "$SKRYPT" "$ROOT"
   [ "$status" -eq 1 ]
-  [[ "$output" == *".husky: husky jest zabroniony"* ]] || false
+  [[ "$output" == *".husky: projekty nie mają hooków git"* ]] || false
+}
+
+@test ".githooks w repo" {
+  mkdir "$ROOT/.githooks"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *".githooks: projekty nie mają hooków git"* ]] || false
+}
+
+@test ".githooks w podkatalogu" {
+  mkdir -p "$ROOT/apps/web/.githooks"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"apps/web/.githooks"* ]] || false
 }
 
 @test ".husky w podkatalogu" {
@@ -150,7 +164,7 @@ zaznacz_wszystko() {
 }
 
 @test "node_modules pomijane" {
-  mkdir -p "$ROOT/node_modules/x/.husky"
+  mkdir -p "$ROOT/node_modules/x/.husky" "$ROOT/node_modules/x/.githooks"
   echo '{"scripts":{"prepare":"husky"}}' >"$ROOT/node_modules/x/package.json"
   run bash "$SKRYPT" "$ROOT"
   [ "$status" -eq 0 ]

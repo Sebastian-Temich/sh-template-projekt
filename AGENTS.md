@@ -93,13 +93,13 @@ zgodne wstecz.
 
 ## Hooki git
 
-- Nie ustawiasz lokalnego `core.hooksPath`: wyłącza globalny hook serwera.
-- Nie instalujesz husky i nie uruchamiasz `pre-commit install`.
-- Hooki projektu trafiają do `.githooks/<nazwa>` i muszą być wykonywalne. Globalny hook je wywołuje.
-- Lint i formatowanie i tak sprawdza CI, więc hook nie jest do nich potrzebny.
-- Zmiana w `.githooks/` to kod uruchamiany na serwerze. Review traktuje ją jak zmianę bezpieczeństwa.
+Projekty nie mają hooków git: ani `.githooks/`, ani husky, ani pre-commit. Lint, formatowanie i testy
+sprawdza CI.
 
-`scripts/check-dod.sh` odrzuca `.husky/` i skrypt `prepare` z husky w `package.json`.
+- Nie ustawiasz lokalnego `core.hooksPath`: wyłącza globalny hook serwera.
+- Nie uruchamiasz `pre-commit install`.
+
+`scripts/check-dod.sh` odrzuca `.githooks/`, `.husky/` i skrypt `prepare` z husky w `package.json`.
 
 ## Migracje
 
