@@ -1,0 +1,123 @@
+#!/usr/bin/env bats
+# Testy scripts/check-dod.sh na kopii docs/ z szablonu.
+# Uruchomienie: bats scripts/tests/check-dod.bats
+
+SKRYPT="$BATS_TEST_DIRNAME/../check-dod.sh"
+
+setup() {
+  ROOT="$BATS_TEST_TMPDIR/repo"
+  mkdir -p "$ROOT"
+  cp -R "$BATS_TEST_DIRNAME/../../docs" "$ROOT/docs"
+}
+
+# Podmiana bez sed -i, które działa inaczej na macOS i Linuksie.
+zamien() {
+  sed "$2" "$1" >"$1.nowy"
+  mv "$1.nowy" "$1"
+}
+
+ustaw() {
+  zamien "$ROOT/docs/konfiguracja.md" "s/^$1: .*/$1: $2/"
+}
+
+status_etapu() {
+  zamien "$ROOT/docs/$1/DoD.md" "s/^status: .*/status: $2/"
+}
+
+zaznacz_wszystko() {
+  zamien "$ROOT/docs/$1/DoD.md" 's/^- \[ \]/- [x]/'
+}
+
+@test "szablon przechodzi" {
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"check-dod: OK (tryb M)"* ]] || false
+}
+
+@test "brak konfiguracji" {
+  rm "$ROOT/docs/konfiguracja.md"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"brak"*"konfiguracja.md"* ]] || false
+}
+
+@test "niedozwolony tryb procesu" {
+  ustaw tryb_procesu X
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"tryb_procesu='X'"* ]] || false
+}
+
+@test "tryb L niedostepny w etapie A" {
+  ustaw tryb_procesu L
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"dopiero w etapie wdrożenia B"* ]] || false
+}
+
+@test "brak DoD etapu" {
+  rm "$ROOT/docs/08-qa/DoD.md"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"docs/08-qa/DoD.md: brak pliku"* ]] || false
+}
+
+@test "bledna iteracja" {
+  zamien "$ROOT/docs/08-qa/DoD.md" 's/^iteracja: .*/iteracja: 4/'
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"iteracja='4'"* ]] || false
+}
+
+@test "brak sekcji" {
+  zamien "$ROOT/docs/08-qa/DoD.md" 's/^## Checkpoint$/## Inna/'
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"brak sekcji 'Checkpoint'"* ]] || false
+}
+
+@test "status done z pustymi polami" {
+  status_etapu 08-qa done
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"status done, ale"* ]] || false
+}
+
+@test "status done z zaznaczonymi polami" {
+  status_etapu 08-qa done
+  zaznacz_wszystko 08-qa
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 0 ]
+}
+
+@test "blok tylko-tryb:L pomijany w trybie M" {
+  status_etapu wydanie done
+  zaznacz_wszystko wydanie
+  zamien "$ROOT/docs/wydanie/DoD.md" 's/^- \[x\] `architektoniczna/- [ ] `architektoniczna/'
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 0 ]
+}
+
+@test "blok tylko-tryb:L liczony w trybie L" {
+  ustaw etap_wdrozenia B
+  ustaw tryb_procesu L
+  status_etapu wydanie done
+  zaznacz_wszystko wydanie
+  zamien "$ROOT/docs/wydanie/DoD.md" 's/^- \[x\] `architektoniczna/- [ ] `architektoniczna/'
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"docs/wydanie/DoD.md: status done, ale 1 pól"* ]] || false
+}
+
+@test "pominiety etap z trybu M odrzucony" {
+  status_etapu 08-qa pominiety
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"status pominiety niedozwolony"* ]] || false
+}
+
+@test "pominiety etap spoza trybu M dozwolony" {
+  status_etapu 01-brief pominiety
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 0 ]
+}

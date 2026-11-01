@@ -30,6 +30,7 @@
       "WebFetch",
       "WebSearch",
       "Bash(git push *)",
+      "Bash(git push * production)",
       "Bash(git commit *)",
       "Bash(gh pr merge *)",
       "Bash(gh workflow *)",

@@ -123,7 +123,7 @@ przed pierwszym wydaniem zrób je na projekcie testowym.
 ### Testy skryptu
 
 ```bash
-bats scripts/tests/deploy-prod.bats
+bats scripts/tests
 ```
 
 ## Zawartość
