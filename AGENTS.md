@@ -91,6 +91,16 @@ zgodne wstecz.
 - Maks. 3 iteracje. Licznik podbija orkiestrator, wyłącznie po FAIL review.
 - Przerwanie przez limit nie podbija licznika. Po 3. FAIL następuje eskalacja.
 
+## Hooki git
+
+- Nie ustawiasz lokalnego `core.hooksPath`: wyłącza globalny hook serwera.
+- Nie instalujesz husky i nie uruchamiasz `pre-commit install`.
+- Hooki projektu trafiają do `.githooks/<nazwa>` i muszą być wykonywalne. Globalny hook je wywołuje.
+- Lint i formatowanie i tak sprawdza CI, więc hook nie jest do nich potrzebny.
+- Zmiana w `.githooks/` to kod uruchamiany na serwerze. Review traktuje ją jak zmianę bezpieczeństwa.
+
+`scripts/check-dod.sh` odrzuca `.husky/` i skrypt `prepare` z husky w `package.json`.
+
 ## Migracje
 
 Migracje są zgodne wstecz: poprzednia wersja aplikacji musi działać na nowym schemacie (expand/contract).

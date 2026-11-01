@@ -2,6 +2,7 @@
 # Sprawdza DoD.md wszystkich etapów (docs/proces-v1.md, „Definition of Done”).
 # Użycie: scripts/check-dod.sh [KATALOG_REPO]
 # Blok <!-- tylko-tryb:L --> ... <!-- /tylko-tryb --> liczy się wyłącznie w trybie L.
+# Sprawdza też zakaz husky (AGENTS.md, „Hooki git”): lokalny core.hooksPath wyłącza hook serwera.
 # Działa na bash 3.2 (macOS) i bez narzędzi spoza systemu.
 set -euo pipefail
 
@@ -125,6 +126,20 @@ EOF
     *) blad "$wzgl: status='$status', dozwolone todo|in-progress|review|done|escalated|pominiety" ;;
   esac
 done
+
+# Bez jq: pole "prepare" z husky w dowolnym package.json poza node_modules.
+while IFS= read -r sciezka; do
+  wzgl="${sciezka#"$ROOT"/}"
+  case "$sciezka" in
+    */.husky) blad "$wzgl: husky jest zabroniony, hooki projektu trafiają do .githooks/" ;;
+    *)
+      if grep -Eq '"prepare"[[:space:]]*:[[:space:]]*"[^"]*husky' "$sciezka"; then
+        blad "$wzgl: skrypt prepare z husky jest zabroniony, hooki projektu trafiają do .githooks/"
+      fi
+      ;;
+  esac
+done < <(find "$ROOT" \( -name node_modules -o -name .git \) -prune -o \
+  \( -type d -name .husky -o -type f -name package.json \) -print)
 
 if [ "$bledy" -gt 0 ]; then
   echo "check-dod: błędy: $bledy" >&2

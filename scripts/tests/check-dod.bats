@@ -116,6 +116,46 @@ zaznacz_wszystko() {
   [[ "$output" == *"status pominiety niedozwolony"* ]] || false
 }
 
+@test ".husky w repo" {
+  mkdir "$ROOT/.husky"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *".husky: husky jest zabroniony"* ]] || false
+}
+
+@test ".husky w podkatalogu" {
+  mkdir -p "$ROOT/apps/web/.husky"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"apps/web/.husky"* ]] || false
+}
+
+@test "prepare z husky w package.json" {
+  echo '{"scripts":{"prepare":"husky"}}' >"$ROOT/package.json"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"package.json: skrypt prepare z husky"* ]] || false
+}
+
+@test "prepare z husky wsrod innych polecen, z odstepami" {
+  printf '{\n  "scripts": {\n    "prepare" :  "pnpm build && husky install"\n  }\n}\n' >"$ROOT/package.json"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+}
+
+@test "prepare bez husky i inne skrypty przechodza" {
+  echo '{"scripts":{"prepare":"tsc","lint":"husky-nie-tutaj"}}' >"$ROOT/package.json"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 0 ]
+}
+
+@test "node_modules pomijane" {
+  mkdir -p "$ROOT/node_modules/x/.husky"
+  echo '{"scripts":{"prepare":"husky"}}' >"$ROOT/node_modules/x/package.json"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 0 ]
+}
+
 @test "pominiety etap spoza trybu M dozwolony" {
   status_etapu 01-brief pominiety
   run bash "$SKRYPT" "$ROOT"
