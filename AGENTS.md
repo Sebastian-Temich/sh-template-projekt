@@ -79,6 +79,7 @@ Każde zadanie kończy się raportem `docs/07-realizacja/T-NR.md`, szablon:
 
 - **Decyzje** (orkiestrator przenosi do `decyzje.md`),
 - **Drobne uwagi** (orkiestrator przenosi do `backlog-drobne.md`),
+- **Ryzyka** (dla reviewera i orkiestratora),
 - **Propozycje dla systemu** (orkiestrator zbiera do `sh-system/docs/propozycje.md`).
 
 DoD zadania: kryteria z issue spełnione, testy zielone, raport `T-NR.md`, brak sekretów, migracje
@@ -106,6 +107,10 @@ sprawdza CI.
 Migracje są zgodne wstecz: poprzednia wersja aplikacji musi działać na nowym schemacie (expand/contract).
 Najpierw dodajesz, potem przenosisz użycie, a usuwasz dopiero w kolejnym wydaniu. Nie zmieniasz
 istniejących plików migracji.
+
+Porty w `supabase/config.toml` to blok `blok_portow` z `konfiguracja.md` (rejestr `~/sh/porty.md`).
+Worker ich nie zmienia, a review traktuje zmianę portów jako zgłoszenie 🟡. Wyjątek: zadanie
+szkieletu po `supabase init` ustawia wszystkie porty na ten blok.
 
 ## Eskalacje
 

@@ -11,4 +11,6 @@ PR: #NR
 
 ## Drobne uwagi
 
+## Ryzyka
+
 ## Propozycje dla systemu
