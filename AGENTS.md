@@ -8,6 +8,9 @@ Jedyny plik instrukcji projektu, dla wszystkich agentów. Proces: `sh-system/doc
 - Czytaj tylko pliki z sekcji „Wejście” swojego skilla i zakres swojego zadania.
 - Stan projektu jest w plikach i na GitHubie, nie w pamięci sesji.
 - Dokumentacja żyje w `docs/`. Obsidian jest tylko widokiem.
+- W `docs/` nie używasz `dataviewjs` ani innego wykonywalnego kodu w notatkach (inline `$=`,
+  Templater). Widoki Dataview piszesz wyłącznie w DQL (blok `dataview`), a dane, których DQL nie
+  wyciągnie, trafiają do frontmattera. `scripts/check-dod.sh` odrzuca bloki `dataviewjs` i inline `$=`.
 - Konfiguracja projektu: `docs/konfiguracja.md`. Tam są limity, tryb procesu i modele.
 - Poprawiasz w iteracji tylko zgłoszenia z review. Innych rzeczy nie ruszasz.
 - Etap kończy się, gdy `DoD.md` ma wszystkie pola zaznaczone, a review dało PASS.

@@ -9,13 +9,15 @@ zadania_anulowane: 0
 pr_otwarte: 0
 ci_fail: 0
 wstrzymania: []
+ostatnie_decyzje: []
 ostatnia_synchronizacja: brak
 ---
 
 # Status projektu
 
-Plik wspólny, aktualizuje orkiestrator. Liczniki i `wstrzymania` (wpisy z `~/sh/limity.md`) we
-frontmatterze zapisuje `scripts/sync-status.sh`. Widok w Obsidianie: `docs/_dashboard.md`.
+Plik wspólny, aktualizuje orkiestrator. Frontmatter zapisuje `scripts/sync-status.sh`: liczniki,
+`wstrzymania` (wpisy z `~/sh/limity.md`) i `ostatnie_decyzje` (5 najnowszych z `decyzje.md`).
+Widok w Obsidianie: `docs/_dashboard.md`.
 
 ## Bieżący etap
 
