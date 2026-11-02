@@ -2,6 +2,7 @@
 etap: 03-wymagania
 status: todo
 iteracja: 0
+akceptacja_wlasciciela: false
 ---
 
 # DoD: Wymagania (tryb L)

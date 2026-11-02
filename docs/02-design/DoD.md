@@ -2,6 +2,7 @@
 etap: 02-design
 status: todo
 iteracja: 0
+akceptacja_wlasciciela: false
 ---
 
 # DoD: Analiza designu (tryb L)

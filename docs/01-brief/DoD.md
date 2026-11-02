@@ -2,6 +2,7 @@
 etap: 01-brief
 status: todo
 iteracja: 0
+akceptacja_wlasciciela: false
 ---
 
 # DoD: Brief (tryb L)

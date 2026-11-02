@@ -135,9 +135,10 @@ bats scripts/tests
 | `CHANGELOG.md` | Zmiany projektu, aktualizowane przez `shctl task close` |
 | `docs/` | Etapy z `DoD.md`, pliki wspólne, `konfiguracja.md` |
 | `docs/_szablony/` | Szablony dokumentów |
+| `docs/_dashboard.md` | Widok Dataview w Obsidianie: etapy, zadania, eskalacje, decyzje, wstrzymania, „Czeka na Ciebie” |
 | `scripts/check-dod.sh` | Walidacja DoD, działa w CI |
 | `scripts/setup-labels.sh` | Etykiety GitHub, idempotentnie |
-| `scripts/sync-status.sh` | Stan issue, PR i CI do `06-zadania/index.md` i `status.md` |
+| `scripts/sync-status.sh` | Stan issue, PR i CI do `06-zadania/index.md` i `status.md`, wstrzymania z `~/sh/limity.md` |
 | `scripts/deploy-prod.sh` | Wdrożenie produkcyjne, tylko dla właściciela; testy w `scripts/tests/` |
 | `.claude/roles/` | Profile uprawnień, uruchamiane przez `claude --settings` |
 | `.github/` | Szablony issue i PR, CI, migracje staging, zablokowany workflow deploy produkcyjny |

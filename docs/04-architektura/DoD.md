@@ -2,6 +2,7 @@
 etap: 04-architektura
 status: todo
 iteracja: 0
+akceptacja_wlasciciela: true
 ---
 
 # DoD: Architektura

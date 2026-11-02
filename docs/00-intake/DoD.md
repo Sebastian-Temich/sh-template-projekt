@@ -2,6 +2,7 @@
 etap: 00-intake
 status: todo
 iteracja: 0
+akceptacja_wlasciciela: true
 ---
 
 # DoD: Specyfikacja

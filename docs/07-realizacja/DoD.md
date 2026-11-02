@@ -2,6 +2,7 @@
 etap: 07-realizacja
 status: todo
 iteracja: 0
+akceptacja_wlasciciela: false
 ---
 
 # DoD: Realizacja

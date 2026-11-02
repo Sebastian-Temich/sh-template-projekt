@@ -2,6 +2,7 @@
 etap: 05-plan
 status: todo
 iteracja: 0
+akceptacja_wlasciciela: true
 ---
 
 # DoD: Plan

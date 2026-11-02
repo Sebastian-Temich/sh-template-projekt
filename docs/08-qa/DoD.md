@@ -2,6 +2,7 @@
 etap: 08-qa
 status: todo
 iteracja: 0
+akceptacja_wlasciciela: false
 ---
 
 # DoD: QA zbiorcze
