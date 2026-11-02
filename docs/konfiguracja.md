@@ -5,6 +5,9 @@ auto_merge_S: false
 max_local: 1
 max_review_queue: 3
 min_wolne_gb: 15
+# Dodatkowe pliki env (ścieżki względne w repo, bez ..) kopiowane do worktree workera obok .env.local.
+# Reviewer ich nie dostaje. Przykład: [config/dev.local.json]
+env_files: []
 playwright_version: 1.61.1
 playwright_workers: 1
 modele:
@@ -39,6 +42,7 @@ hosting:
 | `max_local` | Limit lokalnych workerów, wspólny dla wszystkich projektów na Macu |
 | `max_review_queue` | Liczba PR czekających na review, przy której dispatch staje |
 | `min_wolne_gb` | Minimum wolnego miejsca na dysku |
+| `env_files` | Dodatkowe pliki env, które `shctl task dispatch` kopiuje do worktree workera obok `.env.local`. Ścieżki względne, bez `..`; tylko klucze testowe. Reviewer ich nie dostaje |
 | `playwright_version` | Przypięta wersja, ostatnia z działającym WebKit na macOS 14 Intel |
 | `playwright_workers` | Liczba workerów Playwright |
 | `modele` | Model per rola. `opus` to najmocniejszy dostępny Opus. Model reviewera wybiera właściciel; `domyslny` oznacza model z konfiguracji Codex |
