@@ -1,87 +1,84 @@
 # Dashboard projektu
 
-Widok tylko do odczytu dla Obsidiana z wtyczką Dataview (w ustawieniach włączone „Enable JavaScript
-Queries”). Ścieżki liczy względem tego pliku, więc działa w `SH/Projekty/NAZWA/docs/` i w samym repo.
-Niczego tu nie edytuj: zmiana w klonie zatrzymuje synchronizację.
+Widok tylko do odczytu dla Obsidiana z wtyczką Dataview. Używa wyłącznie zapytań DQL, więc
+„Enable JavaScript Queries” może zostać wyłączone. Ścieżki liczy względem tego pliku
+(`this.file.folder`), więc działa w `SH/Projekty/NAZWA/docs/` i w samym repo. Niczego tu nie
+edytuj: zmiana w klonie zatrzymuje synchronizację.
 
-Źródła: frontmatter `docs/*/DoD.md` (`etap`, `status`, `iteracja`, `akceptacja_wlasciciela`),
-frontmatter `docs/status.md` (liczniki i `wstrzymania` z `scripts/sync-status.sh`), frontmatter
-`docs/07-realizacja/escalations/E-NNN.md` (`status: otwarta`, zapisuje `shctl escalate`),
-tabela `docs/decyzje.md`.
+Źródła, wszystkie z frontmattera:
+
+- `docs/*/DoD.md`: `etap`, `status`, `iteracja`, `akceptacja_wlasciciela`;
+- `docs/07-realizacja/escalations/E-NNN.md`: `status: otwarta`, `dotyczy`, `powod`, `priorytet`,
+  `data` (zapisuje `shctl escalate`);
+- `docs/status.md`: liczniki zadań, `wstrzymania`, `ostatnie_decyzje`, `ostatnia_synchronizacja`
+  (zapisuje `scripts/sync-status.sh`, więc dane są z chwili ostatniej synchronizacji).
 
 ## Czeka na Ciebie
 
-```dataviewjs
-const docs = dv.current().file.folder;
-const esk = dv.pages(`"${docs}/07-realizacja/escalations"`)
-  .where(p => p.status === "otwarta")
-  .sort(p => p.file.name, "asc");
-const etapy = dv.pages(`"${docs}"`)
-  .where(p => p.file.name === "DoD" && p.akceptacja_wlasciciela === true && p.status === "review")
-  .sort(p => p.etap, "asc");
-const pozycje = [
-  ...esk.map(p => `Eskalacja ${p.file.link} (${p.dotyczy ?? "-"}, ${p.priorytet ?? "-"}): ${p.powod ?? ""}`),
-  ...etapy.map(p => `Etap ${p.file.link} \`${p.etap}\` w review: po PASS czeka na Twoją akceptację`),
-];
-if (pozycje.length) dv.list(pozycje); else dv.paragraph("Nic nie czeka.");
+Otwarte eskalacje:
+
+```dataview
+TABLE WITHOUT ID file.link AS "Eskalacja", dotyczy AS "Dotyczy", powod AS "Powód", priorytet AS "Priorytet"
+WHERE startswith(file.folder, this.file.folder + "/07-realizacja/escalations") AND status = "otwarta"
+SORT file.name ASC
+```
+
+Etapy w review, które po PASS czekają na Twoją akceptację:
+
+```dataview
+TABLE WITHOUT ID link(file.path, etap) AS "Etap", status AS "Status", iteracja AS "Iteracja"
+WHERE file.name = "DoD" AND startswith(file.folder, this.file.folder + "/")
+  AND akceptacja_wlasciciela = true AND status = "review"
+SORT etap ASC
 ```
 
 ## Etapy
 
-```dataviewjs
-const docs = dv.current().file.folder;
-const etapy = dv.pages(`"${docs}"`)
-  .where(p => p.file.name === "DoD" && p.etap)
-  .sort(p => p.etap, "asc");
-dv.table(["Etap", "Status", "Iteracja", "Akceptacja właściciela"],
-  etapy.map(p => [p.file.link, p.status, p.iteracja, p.akceptacja_wlasciciela ? "tak" : "-"]));
+```dataview
+TABLE WITHOUT ID link(file.path, etap) AS "Etap", status AS "Status", iteracja AS "Iteracja",
+  choice(akceptacja_wlasciciela, "tak", "-") AS "Akceptacja właściciela"
+WHERE file.name = "DoD" AND startswith(file.folder, this.file.folder + "/")
+SORT etap ASC
 ```
 
 ## Zadania
 
-```dataviewjs
-const s = dv.page(`${dv.current().file.folder}/status`);
-if (!s) { dv.paragraph("Brak `status.md`."); } else {
-  const n = k => s[k] ?? 0;
-  dv.table(["todo", "in progress", "review", "blocked", "escalated", "done", "anulowane", "PR otwarte", "CI fail"],
-    [[n("zadania_todo"), n("zadania_in_progress"), n("zadania_review"), n("zadania_blocked"),
-      n("zadania_escalated"), n("zadania_done"), n("zadania_anulowane"), n("pr_otwarte"), n("ci_fail")]]);
-  dv.paragraph(`Ostatnia synchronizacja: ${s.ostatnia_synchronizacja ?? "brak"}. Lista zadań: ${dv.fileLink(`${dv.current().file.folder}/06-zadania/index.md`, false, "index")}.`);
-}
+```dataview
+TABLE WITHOUT ID zadania_todo AS "todo", zadania_in_progress AS "in progress", zadania_review AS "review",
+  zadania_blocked AS "blocked", zadania_escalated AS "escalated", zadania_done AS "done",
+  zadania_anulowane AS "anulowane", pr_otwarte AS "PR otwarte", ci_fail AS "CI fail",
+  ostatnia_synchronizacja AS "Synchronizacja"
+WHERE file.folder = this.file.folder AND file.name = "status"
 ```
+
+Lista zadań: [index](06-zadania/index.md).
 
 ## Wstrzymania z limitów
 
-```dataviewjs
-const s = dv.page(`${dv.current().file.folder}/status`);
-const w = s?.wstrzymania ? Array.from(s.wstrzymania) : [];
-if (w.length) dv.list(w); else dv.paragraph("Brak wstrzymań.");
-dv.paragraph(`Stan z synchronizacji: ${s?.ostatnia_synchronizacja ?? "brak"}.`);
+Brak wyników oznacza brak wstrzymań w chwili ostatniej synchronizacji.
+
+```dataview
+LIST WITHOUT ID w
+WHERE file.folder = this.file.folder AND file.name = "status"
+FLATTEN wstrzymania AS w
+WHERE w
 ```
 
 ## Otwarte eskalacje
 
-```dataviewjs
-const esk = dv.pages(`"${dv.current().file.folder}/07-realizacja/escalations"`)
-  .where(p => p.status === "otwarta")
-  .sort(p => p.file.name, "asc");
-if (esk.length) {
-  dv.table(["Eskalacja", "Dotyczy", "Powód", "Priorytet", "Data"],
-    esk.map(p => [p.file.link, p.dotyczy, p.powod, p.priorytet, p.data]));
-} else dv.paragraph("Brak otwartych eskalacji.");
+```dataview
+TABLE WITHOUT ID file.link AS "Eskalacja", dotyczy AS "Dotyczy", powod AS "Powód", priorytet AS "Priorytet", data AS "Data"
+WHERE startswith(file.folder, this.file.folder + "/07-realizacja/escalations") AND status = "otwarta"
+SORT file.name ASC
 ```
 
 ## Ostatnie decyzje
 
-```dataviewjs
-const ILE = 5;
-const tekst = await dv.io.load(`${dv.current().file.folder}/decyzje.md`);
-const wiersze = (tekst ?? "").split("\n")
-  .filter(l => l.startsWith("| ") && !/^\|[- |:]*$/.test(l) && !l.startsWith("| Data |"))
-  .map(l => l.trim().replace(/^\|/, "").replace(/\|$/, "")
-    .split(/(?<!\\)\|/).map(c => c.trim().replace(/\\\|/g, "|")));
-if (wiersze.length) {
-  dv.table(["Data", "Źródło", "Pytanie", "Decyzja"], wiersze.slice(-ILE).reverse());
-} else dv.paragraph("Brak decyzji.");
-dv.paragraph(`Wszystkie: ${dv.fileLink(`${dv.current().file.folder}/decyzje.md`, false, "decyzje")}.`);
+Najnowsza pierwsza, z chwili ostatniej synchronizacji. Wszystkie: [decyzje](decyzje.md).
+
+```dataview
+TABLE WITHOUT ID d.data AS "Data", d.zrodlo AS "Źródło", d.pytanie AS "Pytanie", d.decyzja AS "Decyzja"
+WHERE file.folder = this.file.folder AND file.name = "status"
+FLATTEN ostatnie_decyzje AS d
+WHERE d
 ```

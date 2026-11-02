@@ -2,7 +2,9 @@
 # Sprawdza DoD.md wszystkich etapów (docs/proces-v1.md, „Definition of Done”).
 # Użycie: scripts/check-dod.sh [KATALOG_REPO]
 # Blok <!-- tylko-tryb:L --> ... <!-- /tylko-tryb --> liczy się wyłącznie w trybie L.
-# Sprawdza też zakaz hooków git w projekcie (AGENTS.md, „Hooki git”): .githooks/ i husky.
+# Sprawdza też zakaz hooków git w projekcie (AGENTS.md, „Hooki git”): .githooks/ i husky,
+# oraz zakaz wykonywalnego kodu w notatkach docs/ (AGENTS.md, „Zasady pracy”): bloki dataviewjs
+# i inline `$=`.
 # Działa na bash 3.2 (macOS) i bez narzędzi spoza systemu.
 set -euo pipefail
 
@@ -140,6 +142,12 @@ while IFS= read -r sciezka; do
   esac
 done < <(find "$ROOT" \( -name node_modules -o -name .git \) -prune -o \
   \( -type d \( -name .husky -o -name .githooks \) -o -type f -name package.json \) -print)
+
+# Wykonywalny kod w notatkach: Dataview DQL tak, dataviewjs i inline JS nie.
+while IFS= read -r trafienie; do
+  blad "${trafienie#"$ROOT"/}: wykonywalny kod w notatce (dataviewjs albo inline \`\$=\`), dozwolone tylko DQL"
+done < <(find "$DOCS" -type f -name '*.md' -exec grep -HnE \
+  '^[[:space:]>]*(```+|~~~+)[[:space:]]*\{?dataviewjs|`\$=' {} + 2>/dev/null | cut -d: -f1-2 || true)
 
 if [ "$bledy" -gt 0 ]; then
   echo "check-dod: błędy: $bledy" >&2

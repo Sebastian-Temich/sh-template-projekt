@@ -175,3 +175,31 @@ zaznacz_wszystko() {
   run bash "$SKRYPT" "$ROOT"
   [ "$status" -eq 0 ]
 }
+
+@test "blok dataviewjs w docs to blad" {
+  printf '# X\n\n```dataviewjs\ndv.paragraph(1)\n```\n' >"$ROOT/docs/widok.md"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"docs/widok.md:3: wykonywalny kod w notatce"* ]] || false
+}
+
+@test "dataviewjs w podkatalogu, z wcieciem i tyldami to blad" {
+  mkdir -p "$ROOT/docs/07-realizacja/x"
+  printf -- '- lista\n  ~~~ dataviewjs\n  1\n  ~~~\n' >"$ROOT/docs/07-realizacja/x/a.md"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"docs/07-realizacja/x/a.md:2:"* ]] || false
+}
+
+@test "inline dataview JS to blad" {
+  printf 'Liczba: `$= dv.pages().length`\n' >"$ROOT/docs/widok.md"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"wykonywalny kod w notatce"* ]] || false
+}
+
+@test "blok dataview DQL i slowo dataviewjs w tekscie przechodza" {
+  printf 'Bez dataviewjs.\n\n```dataview\nLIST\n```\n' >"$ROOT/docs/widok.md"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 0 ]
+}
