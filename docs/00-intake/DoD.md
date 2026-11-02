@@ -8,7 +8,7 @@ iteracja: 0
 
 ## Dokumentacja
 
-- [ ] `specyfikacja.md` ma cel, zakres, wymagania z kryteriami, stack, hosting i notatkę o designie
+- [ ] `specyfikacja.md` ma cel i kontekst, użytkowników, zakres, wymagania, typ projektu, stack, hosting, notatkę o designie, ryzyka i szacunek poglądowy
 - [ ] `zrodlo.md` zawiera pierwotne zlecenie
 <!-- tylko-tryb:L -->
 - [ ] `intake.md` powstał
@@ -20,7 +20,8 @@ iteracja: 0
 ## Funkcjonalność
 
 - [ ] Typ projektu jest rozpoznany (web, rozszerzenie Chrome, wtyczka Office, mobile, ML, inny)
-- [ ] Każde wymaganie ma sprawdzalne kryteria akceptacji
+- [ ] Każde wymaganie to historyjka z priorytetem i kryteriami Given/When/Then
+- [ ] Stack ma rekomendację, alternatywę i uzasadnienie
 
 ## Checklisty jakości
 
