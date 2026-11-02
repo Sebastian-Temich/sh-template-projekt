@@ -8,7 +8,8 @@ iteracja: 0
 
 ## Dokumentacja
 
-- [ ] `plan.md` ma kamienie milowe
+- [ ] `plan.md` ma kamienie milowe jako pionowe przekroje
+- [ ] `plan.md` ma 5–10 scenariuszy odbioru, zakres autoryzacji i jeden następny krok
 
 ## Funkcjonalność
 
