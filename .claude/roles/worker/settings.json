@@ -1,5 +1,10 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "skillOverrides": {
+    "tworca-wymagan": "off",
+    "iskt-softwarehouse-tworca-wymagan": "off",
+    "iskt-planista-realizacji": "off"
+  },
   "permissions": {
     "defaultMode": "dontAsk",
     "allow": [
@@ -56,6 +61,9 @@
       "Bash(mv *)"
     ],
     "deny": [
+      "Skill(tworca-wymagan)",
+      "Skill(iskt-softwarehouse-tworca-wymagan)",
+      "Skill(iskt-planista-realizacji)",
       "Edit(docs/status.md)",
       "Edit(docs/decyzje.md)",
       "Edit(docs/metryki.md)",
