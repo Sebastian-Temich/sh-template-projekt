@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Przenosi stan issue, PR i CI z GitHuba do plików wspólnych:
 #   docs/06-zadania/index.md  tabela między znacznikami sync-status
-#   docs/status.md            liczniki we frontmatterze
+#   docs/status.md            liczniki we frontmatterze i wstrzymania z ~/sh/limity.md
 # Tylko dla orkiestratora, na main. Nic nie commituje. Bez zmian stanu nie zmienia plików.
 # Użycie: scripts/sync-status.sh [--dry-run] [--repo WLASCICIEL/NAZWA]
 set -euo pipefail
@@ -9,6 +9,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INDEKS="$ROOT/docs/06-zadania/index.md"
 STATUS="$ROOT/docs/status.md"
+LIMITY="${SH_DIR:-$HOME/sh}/limity.md"
 START='<!-- sync-status:start -->'
 KONIEC='<!-- sync-status:end -->'
 
@@ -122,6 +123,21 @@ jq -r --slurpfile prs "$TMP/prs.json" '
     "pr_otwarte=\($otwarte | length)",
     "ci_fail=\(map(select(.ci == "fail" and (.pr | endswith(" open")))) | length)"
 ' "$TMP/zadania.json" >"$TMP/liczniki"
+
+# Wstrzymania jak w shctl (lib/zadania.sh, „wstrzymania”): pozycje list i wiersze tabel bez
+# nagłówka, „brak” się nie liczy. Zapis jako lista JSON w jednej linii, czyli poprawny YAML.
+{
+  if [ -f "$LIMITY" ]; then
+    grep -E '^(- |\| )' "$LIMITY" | grep -vE '^\|[- |:]*$' | awk '!/^\| / || n++' |
+      grep -viE '^(- |\| )[*_(]*(brak|nic|none)[*_)]*[ |]*$' || true
+  fi
+} | jq -Rsr '
+  split("\n")
+  | map(gsub("^\\s+|\\s+$"; "") | select(length > 0)
+      | if startswith("- ") then ltrimstr("- ")
+        else ltrimstr("|") | rtrimstr("|") | split("|") | map(gsub("^\\s+|\\s+$"; "")) | join(" · ")
+        end)
+  | "wstrzymania=\(tojson)"' >>"$TMP/liczniki"
 
 # Podmienia klucze wyłącznie we frontmatterze; brakujące dopisuje na jego końcu.
 wstaw_liczniki() {

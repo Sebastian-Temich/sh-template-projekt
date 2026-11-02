@@ -2,6 +2,7 @@
 etap: 06-zadania
 status: todo
 iteracja: 0
+akceptacja_wlasciciela: false
 ---
 
 # DoD: Zadania

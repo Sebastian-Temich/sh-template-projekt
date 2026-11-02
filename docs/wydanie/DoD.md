@@ -2,6 +2,7 @@
 etap: wydanie
 status: todo
 iteracja: 0
+akceptacja_wlasciciela: true
 ---
 
 # DoD: Odbiór i dokumentacja
