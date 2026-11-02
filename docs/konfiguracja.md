@@ -20,7 +20,7 @@ modele:
   status: opus
   reviewer:
     narzedzie: codex
-    model: GPT-6.1 Terra
+    model: GPT-6-Astra
     rozumowanie: high
 hosting:
   aplikacja: vercel
@@ -45,5 +45,5 @@ hosting:
 | `env_files` | Dodatkowe pliki env, które `shctl task dispatch` kopiuje do worktree workera obok `.env.local`. Ścieżki względne, bez `..`; tylko klucze testowe. Reviewer ich nie dostaje |
 | `playwright_version` | Przypięta wersja, ostatnia z działającym WebKit na macOS 14 Intel |
 | `playwright_workers` | Liczba workerów Playwright |
-| `modele` | Model per rola. `opus` to najmocniejszy dostępny Opus. Model reviewera wybiera właściciel; `domyslny` oznacza model z konfiguracji Codex |
+| `modele` | Model per rola. `opus` to najmocniejszy dostępny Opus. Model reviewera wybiera właściciel; `domyslny` oznacza model z konfiguracji Codex. Decyzja właściciela z 2026-11-02: role Claude na `opus` (Opus 5.5), reviewer Codex na GPT-6-Astra (najmocniejszy model Codexa) z rozumowaniem `high` |
 | `hosting` | Proponuje intake, akceptuje właściciel (`zaakceptowany: true`). Domyślnie Vercel + Supabase Cloud (UE) na kontach klienta |
