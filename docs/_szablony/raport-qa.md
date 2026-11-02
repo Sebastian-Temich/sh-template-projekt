@@ -21,8 +21,16 @@ Commit: SHA
 
 ## Zgłoszenia
 
+Tylko 🔴 krytyczne i 🟡 istotne; każde staje się issue `typ:qa` przez `shctl task create`.
+
 | Issue | Waga | Opis |
 |---|---|---|
+
+## Drobne uwagi
+
+Zgłoszenia ⚪ drobne, bez issue; orkiestrator przenosi je do `docs/backlog-drobne.md`.
+
+- brak
 
 ## Werdykt
 
