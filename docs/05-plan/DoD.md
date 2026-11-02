@@ -15,12 +15,12 @@ iteracja: 0
 
 - [ ] Każde wymaganie ma miejsce w planie
 - [ ] Pierwsze zadanie to szkielet projektu
-- [ ] Ostatnie zadanie to dokumentacja wydania
+- [ ] Ostatnie zadanie to dokumentacja wydania (`wydanie/techniczna` i `wydanie/produktowa`)
 
 ## Checklisty jakości
 
 - [ ] Zależności między zadaniami są jawne
-- [ ] Zadania właściciela (konta, publikacja) są w planie
+- [ ] Zadania właściciela są w planie: konta prod i staging, DNS, `STAGING_DB_URL`, zmienne prod w Vercel oraz kroki typu projektu
 
 ## Checkpoint
 

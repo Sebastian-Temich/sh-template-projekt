@@ -20,6 +20,8 @@ iteracja: 0
 
 - [ ] Model danych i granice modułów są opisane
 - [ ] Bezpieczeństwo jest opisane (auth, dostęp do danych, sekrety)
+- [ ] Środowiska local, staging i prod oraz droga na produkcję są opisane
+- [ ] Migracje zgodne wstecz są zasadą modelu danych
 - [ ] Obszary ryzyka mają ADR
 
 ## Checkpoint

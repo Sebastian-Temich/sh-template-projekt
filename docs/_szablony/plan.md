@@ -15,10 +15,20 @@ Każdy kamień to pionowy przekrój: działający rezultat jednej ścieżki (dan
 | Nr | Zadanie | Kamień | Zależności | Wykonawca |
 |---|---|---|---|---|
 | 1 | Szkielet projektu (sekwencyjnie) | 1 | | claude |
+| N | Dokumentacja wydania (`wydanie/techniczna`, `wydanie/produktowa`) | ostatni | wszystkie | claude |
 
-Ostatnie zadanie planu to dokumentacja wydania.
+Pierwsze zadanie kamienia 1 to szkielet, ostatnie zadanie planu to dokumentacja wydania.
 
 ## Zadania właściciela
+
+| Zadanie | Przed | Uwagi |
+|---|---|---|
+| Konta prod na kontach klienta: Vercel, Supabase prod (UE) | odbiorem | |
+| Projekt Supabase staging | pierwszą migracją na `main` | |
+| Sekret `STAGING_DB_URL` w GitHub Secrets | pierwszą migracją na `main` | jedyny sekret w GitHubie |
+| Domena i DNS | odbiorem | |
+| Zmienne prod w panelu Vercel | wydaniem | |
+| (typ projektu: konta w sklepach, publikacja) | | |
 
 ## Ryzyka
 
