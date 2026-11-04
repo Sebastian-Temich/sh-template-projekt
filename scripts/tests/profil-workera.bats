@@ -129,6 +129,6 @@ bash_regula() {
     run jq -e '.permissions.allow | (index("Read") // index("Glob") // index("Grep"))' "$p"
     [ "$status" -ne 0 ] || { echo "ogolne Read/Glob/Grep w $p"; false; }
     jq -e '.hooks.PreToolUse[] | select(.matcher == "Read|Glob|Grep")
-      | .hooks[] | select(.command == "/Users/Shared/sh/bin/odczyt-hook.sh")' "$p" >/dev/null
+      | .hooks[] | select(.command == "/Users/Shared/sh/bin/odczyt-hook.sh || exit 2")' "$p" >/dev/null
   done
 }
