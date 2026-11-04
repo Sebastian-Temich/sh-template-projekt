@@ -7,7 +7,8 @@ SKRYPT="$BATS_TEST_DIRNAME/../check-dod.sh"
 setup() {
   ROOT="$BATS_TEST_TMPDIR/repo"
   mkdir -p "$ROOT"
-  cp -R "$BATS_TEST_DIRNAME/../../docs" "$ROOT/docs"
+  # Dane testowe, nigdy docs/ repo: te pliki zmienia orkiestrator (scripts/tests/dane/README.md).
+  cp -R "$BATS_TEST_DIRNAME/dane/docs" "$ROOT/docs"
 }
 
 # Podmiana bez sed -i, które działa inaczej na macOS i Linuksie.

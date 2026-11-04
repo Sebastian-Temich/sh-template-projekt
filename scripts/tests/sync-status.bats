@@ -5,7 +5,8 @@
 setup() {
   ROOT="$BATS_TEST_TMPDIR/repo"
   mkdir -p "$ROOT/scripts" "$BATS_TEST_TMPDIR/bin" "$BATS_TEST_TMPDIR/sh"
-  cp -R "$BATS_TEST_DIRNAME/../../docs" "$ROOT/docs"
+  # Dane testowe, nigdy docs/ repo: te pliki zmienia orkiestrator (scripts/tests/dane/README.md).
+  cp -R "$BATS_TEST_DIRNAME/dane/docs" "$ROOT/docs"
   cp "$BATS_TEST_DIRNAME/../sync-status.sh" "$ROOT/scripts/"
   printf '#!/bin/sh\necho "[]"\n' >"$BATS_TEST_TMPDIR/bin/gh"
   chmod +x "$BATS_TEST_TMPDIR/bin/gh"
@@ -63,8 +64,8 @@ EOF
 }
 
 @test "dashboard ma tylko DQL" {
-  run grep -cE '^```dataview$' "$BATS_TEST_DIRNAME/../../docs/_dashboard.md"
+  run grep -cE '^```dataview$' "$BATS_TEST_DIRNAME/dane/docs/_dashboard.md"
   [ "$output" -ge 6 ]
-  run grep -E 'dataviewjs|`\$=' "$BATS_TEST_DIRNAME/../../docs/_dashboard.md"
+  run grep -E 'dataviewjs|`\$=' "$BATS_TEST_DIRNAME/dane/docs/_dashboard.md"
   [ "$status" -eq 1 ]
 }
