@@ -75,6 +75,21 @@ Worker NIE edytuje tych plików. Aktualizuje je wyłącznie orkiestrator, na `ma
 
 Worker pisze tylko kod, testy, docs obszaru swojego zadania i własny raport.
 
+## Profil workera (Bash)
+
+Worker działa w trybie `dontAsk` z `.claude/roles/worker/settings.json`: polecenie spoza listy
+dozwolonych dostaje odmowę bez pytania. Claude Code sprawdza każdą część potoku, `&&` i `;`
+osobno, więc każda część musi być dozwolona.
+
+- Dozwolone: `pnpm`, `npx`, `node`, `bats`, `shellcheck`, `gitleaks`, `bash scripts/check-dod.sh`;
+  `rm`, `mv`, `cp`, `mkdir`, `touch` na ścieżkach względnych w worktree; pomocnicze `head`,
+  `tail`, `grep`, `wc`, `sort`, `cut`, `echo`; git na swojej gałęzi, push tylko
+  `git push [-u] [-q] origin task/*`; `gh pr view|checks|diff|list`, `gh run view|list|watch`.
+- Zablokowane: push na `main` i `production`, force push (poza `--force-with-lease` na `task/*`),
+  usuwanie gałęzi, `gh api`, `gh pr merge`, `rm`/`mv`/`cp` ze ścieżką bezwzględną, `~` lub `..`,
+  na plikach wspólnych, `.claude/` i `.env*`, wszystko z `.env.prod*`.
+- Do czytania plików używaj narzędzi Read, Grep i Glob, nie `cat`.
+
 ## Raport zadania
 
 Każde zadanie kończy się raportem `docs/07-realizacja/T-NR.md`, szablon:

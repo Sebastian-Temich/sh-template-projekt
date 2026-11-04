@@ -30,17 +30,19 @@ edycja() {
   fi
 }
 
-# Wynik: allow, deny albo brak (pyta, a w trybie dontAsk odmawia) dla komendy Bash.
+# Wynik: allow, deny albo brak (pyta, a w trybie dontAsk odmawia) dla jednej komendy Bash, bez
+# potoków i && (Claude Code sprawdza każdą część osobno). * pasuje do dowolnego ciągu w każdym
+# miejscu wzorca, a końcowe " *" także do samej komendy ("X *" pasuje do "X").
 bash_regula() {
-  local cmd="$1" r
+  local cmd="$1" r w
   for r in deny allow; do
-    if jq -e --arg c "$cmd" --arg r "$r" '.permissions[$r] | map(select(startswith("Bash(")) | ltrimstr("Bash(") | rtrimstr(")"))
-      | any(. as $w | if ($w | endswith(" *")) then ($c == ($w | rtrimstr(" *")) or ($c | startswith($w | rtrimstr("*"))))
-          else $c == $w end)' \
-      "$PROFIL" >/dev/null; then
-      echo "$r"
-      return
-    fi
+    while IFS= read -r w; do
+      # shellcheck disable=SC2053
+      if [[ "$cmd" == $w ]] || { [[ "$w" == *" *" ]] && [ "$cmd" = "${w% \*}" ]; }; then
+        echo "$r"
+        return
+      fi
+    done < <(jq -r --arg r "$r" '.permissions[$r][] | select(startswith("Bash(")) | ltrimstr("Bash(") | rtrimstr(")")' "$PROFIL")
   done
   echo brak
 }
@@ -81,4 +83,43 @@ bash_regula() {
   [ "$(bash_regula "supabase link --project-ref x")" = deny ]
   [ "$(bash_regula "supabase db push")" = deny ]
   [ "$(bash_regula "supabase initx")" = brak ]
+}
+
+# Polecenia odrzucone w sh-dryrun#1 (2026-11-04), rozbite na części jak w Claude Code.
+@test "polecenia z odmow w sh-dryrun#1 dozwolone" {
+  for c in "git show --stat 6c67d48" "head -80" "gh pr list --head task/1-szkielet" \
+    "pnpm install --frozen-lockfile" "pnpm lint" "ls dist" "rm -rf dist" \
+    "git ls-remote --tags https://github.com/actions/setup-node" "tail -5" \
+    'grep -rn "uses:" .github/workflows/' "readlink -f /usr/local/bin/pnpm" "command -v pnpm" \
+    "bash scripts/check-dod.sh" 'echo "exit=0"' "gitleaks git --redact --no-banner ." "git status --short" \
+    "git commit -q -am opis" "git push -q origin task/1-szkielet" "gh run list --branch main --workflow CI --limit 3" \
+    "gh run watch 123" "bats scripts/tests/sync-status.bats" "npx vitest run" "mkdir -p src/lib" \
+    "mv src/a.ts src/b.ts" "cp src/a.ts src/b.ts" "git restore src/a.ts" "git rm src/a.ts"; do
+    [ "$(bash_regula "$c")" = allow ] || { echo "nie dozwolone: $c ($(bash_regula "$c"))"; false; }
+  done
+}
+
+@test "push na main i production, usuwanie galezi i gh api zablokowane" {
+  for c in "git push origin main" "git push -q origin HEAD:main" "git push origin task/1:main" \
+    "git push origin task/1:refs/heads/main" "git push origin HEAD:production" "git push --force origin task/1" \
+    "git push -f origin task/1" "git push origin --delete task/1" "git push origin :task/1" "git push --all origin" \
+    "git push --mirror origin" "gh api repos/a/b/releases/latest" "gh pr merge 7" "gh workflow run deploy" \
+    "gh secret list" "vercel deploy --prod" "supabase db push" "sudo rm -rf /"; do
+    [ "$(bash_regula "$c")" = deny ] || { echo "nie zablokowane: $c ($(bash_regula "$c"))"; false; }
+  done
+}
+
+@test "rm, mv i cp poza worktree, na plikach wspolnych i .env zablokowane" {
+  for c in "rm -rf /" "rm -rf /Users/Shared/sh" "rm -rf ~/x" "rm -rf ../inne" "mv a /tmp/a" "cp ../x ." \
+    "rm docs/status.md" "mv docs/decyzje.md x" "cp x docs/06-zadania/index.md" "rm CHANGELOG.md" \
+    "cp x .github/workflows/deploy-prod.yml" "rm scripts/deploy-prod.sh" "rm -rf .claude/roles" \
+    "cp .env.example .env.local" "rm .env" "head .env.production" "grep KEY .env.prod.local"; do
+    [ "$(bash_regula "$c")" = deny ] || { echo "nie zablokowane: $c ($(bash_regula "$c"))"; false; }
+  done
+}
+
+@test "gh tylko odczyt: brak zgody na edycje PR i issue" {
+  for c in "gh pr edit 7 --title x" "gh issue edit 1 --add-label x" "gh issue close 1" "gh run rerun 1" "gh run cancel 1"; do
+    [ "$(bash_regula "$c")" != allow ] || { echo "dozwolone: $c"; false; }
+  done
 }
