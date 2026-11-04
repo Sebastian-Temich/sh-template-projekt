@@ -13,7 +13,9 @@ Jedyny plik instrukcji projektu, dla wszystkich agentów. Proces: `sh-system/doc
   wyciągnie, trafiają do frontmattera. `scripts/check-dod.sh` odrzuca bloki `dataviewjs` i inline `$=`.
 - Konfiguracja projektu: `docs/konfiguracja.md`. Tam są limity, tryb procesu i modele.
 - Poprawiasz w iteracji tylko zgłoszenia z review. Innych rzeczy nie ruszasz.
-- Etap kończy się, gdy `DoD.md` ma wszystkie pola zaznaczone, a review dało PASS.
+- Etap kończy się, gdy `DoD.md` ma wszystkie pola zaznaczone (pole bez zastosowania:
+  `- [-] ... (nie dotyczy: powód)`), a review dało PASS. Frontmattera `DoD.md` nie zmieniasz na gałęzi
+  etapu: `status` i `iteracja` ustawia shctl na `main`.
 - Nie zaznaczasz review sam sobie. `scripts/check-dod.sh` działa w CI.
 
 ## Stack (kontrakt)
