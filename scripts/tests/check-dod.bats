@@ -25,6 +25,13 @@ status_etapu() {
   zamien "$ROOT/docs/$1/DoD.md" "s/^status: .*/status: $2/"
 }
 
+# Pierwsze pole pasujące do wzorca: nowy początek i dopisek na końcu (bez sed 0,/re/ z GNU).
+pierwsze_pole() {
+  W="$2" P="$3" K="$4" awk '!z && $0 ~ ENVIRON["W"] { sub(ENVIRON["W"], ENVIRON["P"]); $0 = $0 ENVIRON["K"]; z = 1 } { print }' \
+    "$ROOT/docs/$1/DoD.md" >"$ROOT/docs/$1/DoD.md.nowy"
+  mv "$ROOT/docs/$1/DoD.md.nowy" "$ROOT/docs/$1/DoD.md"
+}
+
 zaznacz_wszystko() {
   zamien "$ROOT/docs/$1/DoD.md" 's/^- \[ \]/- [x]/'
 }
@@ -110,11 +117,37 @@ zaznacz_wszystko() {
   [[ "$output" == *"docs/wydanie/DoD.md: status done, ale 1 pól"* ]] || false
 }
 
-@test "pominiety etap z trybu M odrzucony" {
+@test "pominiety etap z trybu M bez uzasadnienia odrzucony" {
   status_etapu 08-qa pominiety
   run bash "$SKRYPT" "$ROOT"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"status pominiety niedozwolony"* ]] || false
+  [[ "$output" == *"wymaga uzasadnienie_pominiecia"* ]] || false
+}
+
+@test "pominiety etap z trybu M z uzasadnieniem dozwolony" {
+  status_etapu 08-qa pominiety
+  zamien "$ROOT/docs/08-qa/DoD.md" 's/^status: pominiety$/status: pominiety\
+uzasadnienie_pominiecia: biblioteka bez UI, QA w testach jednostkowych/'
+  run bash "$SKRYPT" "$ROOT"
+  echo "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "pole nie dotyczy z powodem zamyka etap" {
+  status_etapu 08-qa done
+  zaznacz_wszystko 08-qa
+  pierwsze_pole 08-qa '^- \[x\] ' '- [-] ' ' (nie dotyczy: biblioteka bez UI)'
+  grep -q '^- \[-\] .*(nie dotyczy: biblioteka bez UI)$' "$ROOT/docs/08-qa/DoD.md"
+  run bash "$SKRYPT" "$ROOT"
+  echo "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "pole [-] bez powodu to blad" {
+  pierwsze_pole 08-qa '^- \[ \] ' '- [-] ' ''
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"docs/08-qa/DoD.md: 1 pól [-] bez"* ]] || false
 }
 
 @test ".husky w repo" {

@@ -149,3 +149,9 @@ Każdy `DoD.md` zawiera checklistę trybu M. Punkty tylko dla trybu L stoją w b
 `<!-- tylko-tryb:L -->` i `check-dod.sh` liczy je wyłącznie w trybie L. Etapy `01-brief`,
 `02-design` i `03-wymagania` należą tylko do trybu L. Tryb S nie ma DoD etapów: jego DoD to issue i
 checklista PR.
+
+Pole, które w projekcie nie ma zastosowania (np. E2E w bibliotece bez UI), zapisujemy jako
+`- [-] treść pola (nie dotyczy: powód)`. `check-dod.sh` liczy je jak zamknięte, a `[-]` bez powodu
+odrzuca. Etap trybu M pomija się tylko przez `shctl stage skip ETAP --notatka "..."`, które zapisuje
+`uzasadnienie_pominiecia` we frontmatterze; bez niego `check-dod.sh` odrzuca status `pominiety`.
+Frontmatter `DoD.md` (`status`, `iteracja`) zmienia tylko shctl na `main`, nigdy gałąź `stage/ETAP`.
