@@ -2,7 +2,8 @@
 etap_wdrozenia: A
 tryb_procesu: M
 auto_merge_S: false
-max_local: 1
+# max_local: limit workerów Maca jest w /Users/Shared/sh/konfiguracja.md (domyślnie 2). Wpis tutaj
+# może go tylko obniżyć dla tego projektu, np. max_local: 1.
 max_review_queue: 3
 min_wolne_gb: 15
 # Dodatkowe pliki env (ścieżki względne w repo, bez ..) kopiowane do worktree workera obok .env.local.
@@ -39,7 +40,7 @@ hosting:
 | `etap_wdrozenia` | `A` albo `B`. Etap A: tylko tryby S i M, tylko `runner:local` i `wykonawca:claude` |
 | `tryb_procesu` | `S`, `M` albo `L` (L od etapu B). Nowy projekt zaczyna od M lub L. Proponuje `sh-intake`, akceptuje właściciel |
 | `auto_merge_S` | Czy orkiestrator merguje zlecenia S sam. Włączamy po kilku udanych zleceniach S |
-| `max_local` | Limit lokalnych workerów, wspólny dla wszystkich projektów na Macu |
+| `max_local` | Opcjonalne obniżenie limitu workerów dla projektu; limit Maca (domyślnie 2) jest w `/Users/Shared/sh/konfiguracja.md` |
 | `max_review_queue` | Liczba PR czekających na review, przy której dispatch staje |
 | `min_wolne_gb` | Minimum wolnego miejsca na dysku |
 | `env_files` | Dodatkowe pliki env, które `shctl task dispatch` kopiuje do worktree workera obok `.env.local`. Ścieżki względne, bez `..`; tylko klucze testowe. Reviewer ich nie dostaje |

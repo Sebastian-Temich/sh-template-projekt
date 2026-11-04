@@ -40,7 +40,9 @@ ma_frontmatter() {
   [ "$(head -n 1 "$1")" = "---" ] && [ "$(awk 'NR > 1 && $0 == "---" { n++ } END { print n + 0 }' "$1")" -ge 1 ]
 }
 
-# Wypisuje: "niezaznaczone zaznaczone".
+# Wypisuje: "niezaznaczone zaznaczone nie-dotyczy błędne-nie-dotyczy".
+# Pole „nie dotyczy”: `- [-] treść (nie dotyczy: powód)`, np. E2E w bibliotece bez UI. Powód jest
+# obowiązkowy; pole bez niego liczy się jako błąd.
 policz_checkboxy() {
   awk -v tryb="$2" '
     /^[ \t]*(```|~~~)/ { kod = !kod; next }
@@ -50,7 +52,11 @@ policz_checkboxy() {
     tylko_l && tryb != "L" { next }
     /^[ \t]*[-*+] \[ \]/ { puste++ }
     /^[ \t]*[-*+] \[[xX]\]/ { pelne++ }
-    END { print puste + 0, pelne + 0 }' "$1"
+    /^[ \t]*[-*+] \[-\]/ {
+      if ($0 ~ /nie dotyczy: *[^ )]/) nd++
+      else zle++
+    }
+    END { print puste + 0, pelne + 0, nd + 0, zle + 0 }' "$1"
 }
 
 etap_w_trybie() {
@@ -111,18 +117,21 @@ for etap in $ETAPY; do
     grep -qxF "## $sekcja" "$plik" || blad "$wzgl: brak sekcji '$sekcja'"
   done
 
+  read -r puste pelne nd zle <<EOF
+$(policz_checkboxy "$plik" "$TRYB")
+EOF
+  [ "$zle" -eq 0 ] || blad "$wzgl: $zle pól [-] bez „(nie dotyczy: powód)”"
+
   case "$status" in
     todo | in-progress | review | escalated) ;;
     done)
-      read -r puste pelne <<EOF
-$(policz_checkboxy "$plik" "$TRYB")
-EOF
       [ "$puste" -eq 0 ] || blad "$wzgl: status done, ale $puste pól nie jest zaznaczonych"
       [ "$pelne" -gt 0 ] || blad "$wzgl: status done bez żadnego zaznaczonego pola"
       ;;
     pominiety)
-      if etap_w_trybie "$etap" "$TRYB"; then
-        blad "$wzgl: status pominiety niedozwolony, bo etap należy do trybu $TRYB"
+      # Etap trybu pomija tylko shctl stage skip --notatka, które zapisuje uzasadnienie.
+      if etap_w_trybie "$etap" "$TRYB" && [ -z "$(fm_get "$plik" uzasadnienie_pominiecia)" ]; then
+        blad "$wzgl: status pominiety w etapie trybu $TRYB wymaga uzasadnienie_pominiecia (shctl stage skip --notatka)"
       fi
       ;;
     *) blad "$wzgl: status='$status', dozwolone todo|in-progress|review|done|escalated|pominiety" ;;
