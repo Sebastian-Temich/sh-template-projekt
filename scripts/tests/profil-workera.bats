@@ -123,3 +123,12 @@ bash_regula() {
     [ "$(bash_regula "$c")" != allow ] || { echo "dozwolone: $c"; false; }
   done
 }
+
+@test "odczyt: bez ogolnego Read, Glob i Grep; zakres pilnuje hook odczyt-hook.sh" {
+  for p in "$PROFIL" "$BATS_TEST_DIRNAME/../../.claude/roles/reviewer/settings.json"; do
+    run jq -e '.permissions.allow | (index("Read") // index("Glob") // index("Grep"))' "$p"
+    [ "$status" -ne 0 ] || { echo "ogolne Read/Glob/Grep w $p"; false; }
+    jq -e '.hooks.PreToolUse[] | select(.matcher == "Read|Glob|Grep")
+      | .hooks[] | select(.command == "/Users/Shared/sh/bin/odczyt-hook.sh || exit 2")' "$p" >/dev/null
+  done
+}
