@@ -16,7 +16,7 @@ ostatnia_synchronizacja: brak
 # Status projektu
 
 Plik wspólny, aktualizuje orkiestrator. Frontmatter zapisuje `scripts/sync-status.sh`: liczniki,
-`wstrzymania` (wpisy z `~/sh/limity.md`) i `ostatnie_decyzje` (5 najnowszych z `decyzje.md`).
+`wstrzymania` (wpisy z `/Users/Shared/sh/limity.md`) i `ostatnie_decyzje` (5 najnowszych z `decyzje.md`).
 Widok w Obsidianie: `docs/_dashboard.md`.
 
 ## Bieżący etap

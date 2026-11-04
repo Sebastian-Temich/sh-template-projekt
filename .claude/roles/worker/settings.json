@@ -53,7 +53,7 @@
       "Bash(scripts/check-dod.sh *)",
       "Bash(bash scripts/check-dod.sh *)",
       "Bash(shctl escalate *)",
-      "Bash(~/sh/bin/shctl escalate *)",
+      "Bash(/Users/Shared/sh/bin/shctl escalate *)",
       "Bash(ls *)",
       "Bash(pwd)",
       "Bash(mkdir *)",

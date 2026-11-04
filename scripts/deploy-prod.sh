@@ -50,7 +50,8 @@ case "$CEL" in
   *) blad "--target: dozwolone prod albo staging" ;;
 esac
 
-[ ! -d "$HOME/sh/sh-system" ] || blad "to wygląda na serwer agentów; wdrożenie tylko z urządzenia właściciela"
+# Serwer agentów: katalog SH w /Users/Shared/sh (SH_DIR w testach) albo dawne ~/sh.
+[ ! -d "${SH_DIR:-/Users/Shared/sh}/sh-system" ] && [ ! -d "$HOME/sh/sh-system" ] || blad "to wygląda na serwer agentów; wdrożenie tylko z urządzenia właściciela"
 
 for narzedzie in git gh jq curl docker supabase vercel; do
   command -v "$narzedzie" >/dev/null || blad "brak narzędzia $narzedzie"

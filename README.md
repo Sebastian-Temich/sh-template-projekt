@@ -14,7 +14,7 @@ Komenda tworzy repo na koncie Sebastian-Temich z tego szablonu i klonuje je. Sza
 pliki. Ustawienia repo trzeba założyć w każdym projekcie osobno, więc `shctl new-project` musi też:
 
 1. uruchomić `scripts/setup-labels.sh`;
-2. zarezerwować blok portów w `~/sh/porty.md`;
+2. zarezerwować blok portów w `/Users/Shared/sh/porty.md`;
 3. ustawić `tryb_procesu` i `hosting` w `docs/konfiguracja.md` po akceptacji właściciela;
 4. oznaczyć w `DoD.md` jako `pominiety` etapy spoza wybranego trybu.
 
@@ -138,7 +138,7 @@ bats scripts/tests
 | `docs/_dashboard.md` | Widok Dataview (tylko DQL) w Obsidianie: etapy, zadania, eskalacje, decyzje, wstrzymania, „Czeka na Ciebie” |
 | `scripts/check-dod.sh` | Walidacja DoD, zakaz hooków git i kodu wykonywalnego w `docs/`, działa w CI |
 | `scripts/setup-labels.sh` | Etykiety GitHub, idempotentnie |
-| `scripts/sync-status.sh` | Stan issue, PR i CI do `06-zadania/index.md` i `status.md`, wstrzymania z `~/sh/limity.md`, ostatnie decyzje |
+| `scripts/sync-status.sh` | Stan issue, PR i CI do `06-zadania/index.md` i `status.md`, wstrzymania z `/Users/Shared/sh/limity.md`, ostatnie decyzje |
 | `scripts/deploy-prod.sh` | Wdrożenie produkcyjne, tylko dla właściciela; testy w `scripts/tests/` |
 | `.claude/roles/` | Profile uprawnień, uruchamiane przez `claude --settings` |
 | `.github/` | Szablony issue i PR, CI, migracje staging, zablokowany workflow deploy produkcyjny |
