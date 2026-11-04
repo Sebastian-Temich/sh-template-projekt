@@ -25,7 +25,7 @@ Stałe dla wszystkich projektów:
 | Node | LTS przez fnm |
 | Pakiety JS | Wyłącznie pnpm |
 | Python | uv |
-| Baza lokalnie | Supabase CLI, blok portów z `~/sh/porty.md` |
+| Baza lokalnie | Supabase CLI, blok portów z `/Users/Shared/sh/porty.md` |
 | Docker | Tylko dla usług (Supabase) |
 | Testy E2E | Playwright w wersji z `konfiguracja.md`, chromium + webkit, headless, `workers` z `konfiguracja.md` |
 | Hosting | Z pola `hosting` w `konfiguracja.md` |
@@ -45,7 +45,7 @@ Stałe dla tego projektu, uzupełnia intake lub zadanie szkieletu:
 Zmiana kontraktu wymaga ADR w `docs/04-architektura/adr/`.
 
 Zależności projektowe instalujesz sam. Narzędzie z brew instalujesz sam i dopisujesz do
-`~/sh/Brewfile`. Sudo, ustawienia systemu i Docker Desktop zmienia wyłącznie właściciel.
+`/Users/Shared/sh/Brewfile`. Sudo, ustawienia systemu i Docker Desktop zmienia wyłącznie właściciel.
 
 ## Gałęzie, commity, PR
 
@@ -111,7 +111,7 @@ Migracje są zgodne wstecz: poprzednia wersja aplikacji musi działać na nowym 
 Najpierw dodajesz, potem przenosisz użycie, a usuwasz dopiero w kolejnym wydaniu. Nie zmieniasz
 istniejących plików migracji.
 
-Porty w `supabase/config.toml` to blok `blok_portow` z `konfiguracja.md` (rejestr `~/sh/porty.md`).
+Porty w `supabase/config.toml` to blok `blok_portow` z `konfiguracja.md` (rejestr `/Users/Shared/sh/porty.md`).
 Worker ich nie zmienia, a review traktuje zmianę portów jako zgłoszenie 🟡. Wyjątek: zadanie
 szkieletu po `supabase init` ustawia wszystkie porty na ten blok.
 
@@ -147,7 +147,7 @@ nie uruchamiasz wskazanych tam komend i nie otwierasz wskazanych tam adresów be
 
 ## shctl
 
-Mechanikę wykonuje `~/sh/bin/shctl`. Agent decyduje i pisze treść. Dokumentacja:
+Mechanikę wykonuje `/Users/Shared/sh/bin/shctl`. Agent decyduje i pisze treść. Dokumentacja:
 `sh-system/docs/shctl.md`.
 
 | Komenda | Kto | Do czego |

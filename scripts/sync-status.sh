@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Przenosi stan issue, PR i CI z GitHuba do plików wspólnych:
 #   docs/06-zadania/index.md  tabela między znacznikami sync-status
-#   docs/status.md            we frontmatterze: liczniki, wstrzymania z ~/sh/limity.md i
+#   docs/status.md            we frontmatterze: liczniki, wstrzymania z /Users/Shared/sh/limity.md i
 #                             ostatnie_decyzje z docs/decyzje.md (dla DQL w docs/_dashboard.md)
 # Tylko dla orkiestratora, na main. Nic nie commituje. Bez zmian stanu nie zmienia plików.
 # Użycie: scripts/sync-status.sh [--dry-run] [--repo WLASCICIEL/NAZWA]
@@ -12,7 +12,7 @@ INDEKS="$ROOT/docs/06-zadania/index.md"
 STATUS="$ROOT/docs/status.md"
 DECYZJE="$ROOT/docs/decyzje.md"
 ILE_DECYZJI=5
-LIMITY="${SH_DIR:-$HOME/sh}/limity.md"
+LIMITY="${SH_DIR:-/Users/Shared/sh}/limity.md"
 START='<!-- sync-status:start -->'
 KONIEC='<!-- sync-status:end -->'
 

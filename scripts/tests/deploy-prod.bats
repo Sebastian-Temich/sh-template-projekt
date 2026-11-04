@@ -37,6 +37,8 @@ esac
 exit 0'
 
   export HOME="$BATS_TEST_TMPDIR/home"
+  # Testy nie mogą widzieć prawdziwego /Users/Shared/sh na serwerze.
+  export SH_DIR="$BATS_TEST_TMPDIR/sh"
   export PATH="$ATRAPY:$PATH"
   export VERCEL_TOKEN=token-vercel VERCEL_ORG_ID=org VERCEL_PROJECT_ID=projekt
   export PROD_DB_URL=postgresql://prod-sekret PROD_DOMAIN=example.com
@@ -145,6 +147,13 @@ kolejnosc() {
 }
 
 @test "na serwerze agentow odmawia" {
+  mkdir -p "$SH_DIR/sh-system"
+  run bash deploy-prod.sh v1.2.3 --dry-run
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"serwer agentów"* ]] || false
+}
+
+@test "na serwerze agentow z dawnym ~/sh odmawia" {
   mkdir -p "$HOME/sh/sh-system"
   run bash deploy-prod.sh v1.2.3 --dry-run
   [ "$status" -eq 1 ]
