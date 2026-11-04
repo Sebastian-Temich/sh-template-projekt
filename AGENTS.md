@@ -154,7 +154,8 @@ powiadomienie. Eskalacja nie zatrzymuje zadań niezależnych.
   prosisz o nie i nie dodajesz ich tam.
 - Produkcję wdraża wyłącznie właściciel ze swojego urządzenia przez `scripts/deploy-prod.sh`.
   Workflow `deploy-prod` jest zablokowany. W etapie A nie ma deployów produkcyjnych.
-- GitHub Secrets zawiera tylko `STAGING_DB_URL`. Staging migruje CI po pushu na `main`.
+- GitHub Secrets zawiera tylko `STAGING_DB_URL`. Staging migruje CI po pushu na `main` ze zmianą w
+  `supabase/migrations/` (albo ręcznie: workflow „Staging”, Run workflow).
 - Gdy znajdziesz sekret w repo, przerywasz i eskalujesz. Nie próbujesz go usuwać z historii sam.
 
 ## Bezpieczeństwo publicznych repo

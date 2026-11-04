@@ -3,9 +3,15 @@
 
 name: Staging
 
+# Tylko gdy zmieniły się migracje (oszczędność minut); bez tego każdy push orkiestratora na main
+# zajmował runner. Pierwsze uruchomienie po dodaniu sekretu: ręcznie (workflow_dispatch).
 on:
   push:
     branches: [main]
+    paths:
+      - "supabase/migrations/**"
+      - ".github/workflows/staging.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,6 +23,7 @@ concurrency:
 jobs:
   migracje:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     env:
       STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
     steps:

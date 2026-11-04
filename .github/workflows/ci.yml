@@ -1,30 +1,91 @@
+# Oszczędność minut (sh-system/docs/serwer.md, „CI i minuty GitHub Actions”):
+# - check-dod i gitleaks działają zawsze (PR, push na main, ręcznie); na pushu gitleaks jest krokiem
+#   joba check-dod (jeden job = jedna minuta zamiast dwóch);
+# - lint i test tylko na PR ze zmianą poza docs/ i *.md, nocą po świeżych commitach i ręcznie;
+# - testy-skryptow tylko przy zmianie w scripts/ albo .github/;
+# - po merge'u na main (i po commitach orkiestratora) tylko smoke: jeden job check-dod z gitleaks.
+# Zadanie szkieletu zastępuje kroki placeholderów, ale zostawia needs, if i timeout-minutes.
+# Każdy nowy job (np. e2e) dostaje timeout-minutes oraz needs: check-dod i if jak lint
+# (scripts/tests/ci-workflow.bats).
 name: CI
 
 on:
   pull_request:
   push:
     branches: [main]
+  schedule:
+    - cron: "23 2 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  lint:
+  check-dod:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      kod: ${{ steps.zakres.outputs.kod }}
+      skrypty: ${{ steps.zakres.outputs.skrypty }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Zakres zmian
+        id: zakres
+        env:
+          ZDARZENIE: ${{ github.event_name }}
+          BAZA: ${{ github.event.pull_request.base.sha }}
+          GLOWA: ${{ github.event.pull_request.head.sha }}
+          WZORCE_DOCS: "docs/* *.md"
+          WZORCE_SKRYPTY: "scripts/* .github/*"
+        run: bash scripts/ci-zakres.sh
+      - name: DoD etapów
+        run: bash scripts/check-dod.sh
+      - name: Instalacja gitleaks (push)
+        if: github.event_name == 'push'
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          archiwum="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$archiwum" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archiwum}"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$archiwum" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archiwum" -C "$RUNNER_TEMP" gitleaks
+      - name: Skan historii gitleaks (push)
+        if: github.event_name == 'push'
+        run: '"$RUNNER_TEMP/gitleaks" git --redact --no-banner .'
+
+  lint:
+    needs: check-dod
+    if: needs.check-dod.outputs.kod == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Lint (placeholder)
         run: echo "Placeholder. Zadanie szkieletu wstawia tu lint projektu."
 
   test:
+    needs: check-dod
+    if: needs.check-dod.outputs.kod == 'true'
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Testy (placeholder)
         run: echo "Placeholder. Zadanie szkieletu wstawia tu testy projektu."
 
   testy-skryptow:
+    needs: check-dod
+    if: needs.check-dod.outputs.skrypty == 'true'
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Instalacja bats i expect
@@ -35,7 +96,9 @@ jobs:
         run: bats scripts/tests
 
   gitleaks:
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     env:
       GITLEAKS_VERSION: 8.30.1
       GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
@@ -52,10 +115,3 @@ jobs:
           tar -xzf "$RUNNER_TEMP/$archiwum" -C "$RUNNER_TEMP" gitleaks
       - name: Skan historii
         run: '"$RUNNER_TEMP/gitleaks" git --redact --no-banner .'
-
-  check-dod:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: DoD etapów
-        run: bash scripts/check-dod.sh
