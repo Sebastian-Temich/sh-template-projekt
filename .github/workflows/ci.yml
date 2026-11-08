@@ -44,7 +44,7 @@ jobs:
           BAZA: ${{ github.event.pull_request.base.sha }}
           GLOWA: ${{ github.event.pull_request.head.sha }}
           WZORCE_DOCS: "docs/* *.md"
-          WZORCE_BEZ_E2E: "scripts/* .claude/* .github/ISSUE_TEMPLATE/* .github/workflows/staging.yml .github/workflows/deploy-prod.yml supabase/migrations/*"
+          WZORCE_BEZ_E2E: "scripts/* .claude/* .github/ISSUE_TEMPLATE/* .github/workflows/staging.yml .github/workflows/deploy-prod.yml"
         run: bash scripts/ci-zakres.sh
       - name: DoD etapów
         run: bash scripts/check-dod.sh
