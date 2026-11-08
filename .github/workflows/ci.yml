@@ -2,10 +2,12 @@
 # - check-dod i gitleaks działają zawsze (PR, push na main, ręcznie); na pushu gitleaks jest krokiem
 #   joba check-dod (jeden job = jedna minuta zamiast dwóch);
 # - lint i test tylko na PR ze zmianą poza docs/ i *.md, nocą po świeżych commitach i ręcznie;
-# - testy-skryptow tylko przy zmianie w scripts/ albo .github/;
+# - e2e tylko przy zmianie kodu aplikacji (poza WZORCE_BEZ_E2E) i gdy jest playwright.config.*;
+#   przeglądarki z cache, kroki z własnym limitem czasu i komunikatem ::error zamiast przerwania joba;
 # - po merge'u na main (i po commitach orkiestratora) tylko smoke: jeden job check-dod z gitleaks.
+# Testy skryptów szablonu (scripts/tests) działają tylko w repo sh-template-projekt (szablon.yml).
 # Zadanie szkieletu zastępuje kroki placeholderów, ale zostawia needs, if i timeout-minutes.
-# Każdy nowy job (np. e2e) dostaje timeout-minutes oraz needs: check-dod i if jak lint
+# Każdy nowy job dostaje timeout-minutes oraz needs: check-dod i if jak lint
 # (scripts/tests/ci-workflow.bats).
 name: CI
 
@@ -30,7 +32,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       kod: ${{ steps.zakres.outputs.kod }}
-      skrypty: ${{ steps.zakres.outputs.skrypty }}
+      e2e: ${{ steps.zakres.outputs.e2e }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -42,7 +44,7 @@ jobs:
           BAZA: ${{ github.event.pull_request.base.sha }}
           GLOWA: ${{ github.event.pull_request.head.sha }}
           WZORCE_DOCS: "docs/* *.md"
-          WZORCE_SKRYPTY: "scripts/* .github/*"
+          WZORCE_BEZ_E2E: "scripts/* .claude/* .github/ISSUE_TEMPLATE/* .github/workflows/staging.yml .github/workflows/deploy-prod.yml supabase/migrations/*"
         run: bash scripts/ci-zakres.sh
       - name: DoD etapów
         run: bash scripts/check-dod.sh
@@ -81,19 +83,57 @@ jobs:
       - name: Testy (placeholder)
         run: echo "Placeholder. Zadanie szkieletu wstawia tu testy projektu."
 
-  testy-skryptow:
+  e2e:
     needs: check-dod
-    if: needs.check-dod.outputs.skrypty == 'true'
+    if: needs.check-dod.outputs.e2e == 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    # Zapas nad limitami kroków niżej: job kończy krok z komunikatem, zanim GitHub go przerwie.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Instalacja bats i expect
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Instalacja
+        run: pnpm install --frozen-lockfile
+      - name: Wersja Playwright
+        id: pw
+        run: echo "wersja=$(pnpm exec playwright --version | awk '{print $2}')" >>"$GITHUB_OUTPUT"
+      - name: Cache przeglądarek Playwright
+        id: pw-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.wersja }}-chromium-webkit
+      - name: Przeglądarki Playwright (chromium + webkit)
+        env:
+          TRAFIENIE: ${{ steps.pw-cache.outputs.cache-hit }}
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq bats expect
-      - name: Testy deploy-prod.sh i check-dod.sh
-        run: bats scripts/tests
+          # Z cache tylko zależności systemowe (apt), bez cache także pobranie przeglądarek.
+          if [ "$TRAFIENIE" = true ]; then set -- install-deps; else set -- install --with-deps; fi
+          kod=0
+          timeout 8m pnpm exec playwright "$@" chromium webkit || kod=$?
+          if [ "$kod" -ne 0 ]; then
+            echo "::error title=Instalacja przeglądarek Playwright::playwright $1 przerwany po 8 min albo nieudany (kod $kod; sieć, CDN, apt). To nie jest błąd kodu PR: ponów job poleceniem gh run rerun ${{ github.run_id }} --failed."
+            exit 1
+          fi
+      - name: Testy E2E
+        run: |
+          kod=0
+          timeout 12m pnpm test:e2e || kod=$?
+          if [ "$kod" -eq 124 ]; then
+            echo "::error title=Limit czasu E2E::testy E2E trwały ponad 12 min i zostały zatrzymane. Szukaj zawieszonego testu albo serwera podglądu w artefakcie playwright-report."
+          fi
+          exit "$kod"
+      - name: Raport Playwright
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
 
   gitleaks:
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
