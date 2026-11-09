@@ -200,3 +200,7 @@ bash_regula() {
     [ "$(bash_regula "$c")" = deny ] || { echo "nie zablokowane: $c ($(bash_regula "$c"))"; false; }
   done
 }
+
+@test "hook gh-plik-hook.sh na Bash: plik tresci PR i komentarzy tylko z /Users/Shared/sh (gh poza sandboxem)" {
+  jq -e '.hooks.PreToolUse | any(.matcher == "Bash" and (.hooks[0].command == "/Users/Shared/sh/bin/gh-plik-hook.sh || exit 2"))' "$PROFIL" >/dev/null
+}
