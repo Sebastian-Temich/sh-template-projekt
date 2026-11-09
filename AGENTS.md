@@ -97,7 +97,7 @@ pętli, `$(...)`, heredoców, `cd` i przekierowań do pliku (szczegóły i przyk
   `gh issue close|edit|delete`, `gh gist`, `gh release upload`; `git -c`, `git -C`, `git config`,
   `--no-index`, `--exec-path`; `sudo`; `rm` poza worktree; `~/Documents`, `~/Desktop`, `~/Downloads`
   i iCloud (`~/Library/Mobile Documents`).
-- Sandbox: każde polecenie Bash poza `git`, `gh`, `shctl escalate` i `brew install` działa w sandboxie
+- Sandbox: każde polecenie Bash poza `git push|fetch|pull`, `gh`, `shctl escalate` i `brew install` działa w sandboxie
   Claude Code. Zapis tylko w worktree, `$TMPDIR` i cache narzędzi (`~/Library/pnpm`, `~/.npm`,
   `~/.cache`, `~/Library/Caches`, katalogi blokad pnpm `/tmp/pnpm-*-502`), sieć tylko do GitHuba, rejestru npm i pobierania Playwrighta.
   Odmowa sandboxa (`EPERM`, `403` z proxy) to granica roli: nie obchodzisz jej, opisujesz w „Ryzykach”
