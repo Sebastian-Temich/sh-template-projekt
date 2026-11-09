@@ -34,8 +34,9 @@ Wymaganie bez funkcji użytkowej (np. wydajność, SEO) ma w nagłówku „(bez 
 ## Karty funkcji
 
 Każda funkcja użytkowa ma kartę `docs/00-intake/funkcje/W-NN.md` (wzór `docs/_szablony/karta-funkcji.md`)
-z częścią „Dla właściciela” (opis, przebieg, stany ekranu z tekstami, reguły, do potwierdzenia) i „Dla
-wykonawcy” (pola i walidacja, kody odpowiedzi, dostępność, kryteria `W-NN/Kn`, design i ADR).
+z częścią „Dla właściciela” (opis, przebieg, stany ekranu z tekstami, reguły, poza zakresem, do
+potwierdzenia) i „Dla wykonawcy” (pola i walidacja, kody odpowiedzi, dostępność, kryteria `W-NN/Kn`,
+design i ADR).
 Specyfikacja trzyma historyjki, karta szczegóły.
 
 | Wymaganie | Karta | Rodzaj (pelna, skrocona) | Ekrany z designu |

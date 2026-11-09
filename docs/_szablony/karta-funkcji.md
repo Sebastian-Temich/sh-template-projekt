@@ -15,8 +15,8 @@ Dwie części. „Dla właściciela” czyta właściciel w checkpoincie specyfi
 HTTP, atrybutów, nazw pól z kodu i backticków. „Dla wykonawcy” czytają sh-plan, worker i review.
 
 rodzaj: pelna (funkcja kluczowa: dane osobowe, płatności, integracja, kilka kroków) albo skrocona
-(funkcja prosta). Skrócona ma: Opis, Przebieg, Stany ekranu, Do potwierdzenia oraz Kryteria akceptacji
-i Design i ADR. Tryb S nie ma kart w repo: krótka karta trafia do celu issue.
+(funkcja prosta). Skrócona ma: Opis, Przebieg, Stany ekranu, Poza zakresem, Do potwierdzenia oraz
+Kryteria akceptacji i Design i ADR. Tryb S nie ma kart w repo: krótka karta trafia do celu issue.
 
 Luka to „[?]”, samotny „?” (np. komórka tabeli „| ? |”) albo TODO. scripts/check-dod.sh odrzuca kartę
 z luką, więc przed PR każda luka ma odpowiedź właściciela albo wiersz w „Do potwierdzenia”.
@@ -54,6 +54,12 @@ Teksty dokładnie takie, jakie zobaczy użytkownik. Wiersz bez zastosowania: „
 ### Reguły biznesowe
 
 - R1: …
+
+### Poza zakresem
+
+Czego ta funkcja nie robi, prostym językiem (np. „bez załączników”, „bez zapisu wiadomości w panelu”).
+
+- …
 
 ### Do potwierdzenia
 
@@ -103,7 +109,3 @@ sprawdzalne testem albo oznaczone „(ręcznie: dlaczego)”.
 
 Krok przebiegu i stan ekranu → plik i ramka w `docs/00-intake/zrodla/` albo „brak w designie” (wtedy
 wiersz w „Do potwierdzenia”). ADR i decyzje, które dotyczą funkcji.
-
-### Poza zakresem
-
-- …

@@ -150,10 +150,10 @@ done
 # samotnego „?” ani TODO poza blokami kodu i komentarzami HTML. Część dla właściciela nie ma kodu w
 # backtickach, kodów HTTP ani atrybutów (aria-*). Sprawdzane w trybie M i L, gdy projekt ma katalog
 # docs/00-intake/funkcje/ (projekty sprzed SH-lite F4 go nie mają).
-WLASCICIEL_PELNA=("Opis" "Przebieg" "Stany ekranu" "Reguły biznesowe" "Do potwierdzenia")
+WLASCICIEL_PELNA=("Opis" "Przebieg" "Stany ekranu" "Reguły biznesowe" "Poza zakresem" "Do potwierdzenia")
 WYKONAWCA_PELNA=("Wejście" "Pola i walidacja" "Odpowiedzi i błędy" "Dostępność" "Przypadki brzegowe"
-  "Kryteria akceptacji" "Design i ADR" "Poza zakresem")
-WLASCICIEL_SKROCONA=("Opis" "Przebieg" "Stany ekranu" "Do potwierdzenia")
+  "Kryteria akceptacji" "Design i ADR")
+WLASCICIEL_SKROCONA=("Opis" "Przebieg" "Stany ekranu" "Poza zakresem" "Do potwierdzenia")
 WYKONAWCA_SKROCONA=("Kryteria akceptacji" "Design i ADR")
 KARTY="$DOCS/00-intake/funkcje"
 SPEC="$DOCS/00-intake/specyfikacja.md"

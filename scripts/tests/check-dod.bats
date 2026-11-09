@@ -287,12 +287,12 @@ karty() {
   {
     printf -- '---\nwymaganie: W-01\nrodzaj: pelna\n---\n\n# Karta funkcji W-01: Formularz\n\n'
     printf '<!-- komentarz z [?], TODO i `kodem` nie jest luką -->\n\n## Dla właściciela\n\n'
-    for s in "Opis" "Przebieg" "Stany ekranu" "Reguły biznesowe" "Do potwierdzenia"; do
+    for s in "Opis" "Przebieg" "Stany ekranu" "Reguły biznesowe" "Poza zakresem" "Do potwierdzenia"; do
       printf '### %s\n\nCzy to pytanie? Wiadomość do 5000 znaków.\n\n' "$s"
     done
     printf '## Dla wykonawcy\n\n'
     for s in "Wejście" "Pola i walidacja" "Odpowiedzi i błędy" "Dostępność" "Przypadki brzegowe" \
-      "Kryteria akceptacji" "Design i ADR" "Poza zakresem"; do
+      "Kryteria akceptacji" "Design i ADR"; do
       printf '### %s\n\nKod 429, `aria-live`.\n\n' "$s"
     done
     printf '```\nTODO w bloku kodu nie jest luką\n```\n'
@@ -338,7 +338,7 @@ karty() {
   zamien "$K" 's/^Czy to pytanie? Wiadomość do 5000 znaków.$/Serwer zwraca 429 i ustawia `aria-live`./'
   run bash "$SKRYPT" "$ROOT"
   [ "$status" -eq 1 ]
-  [ "$(grep -c 'część dla właściciela bez kodu' <<<"$output")" -eq 5 ]
+  [ "$(grep -c 'część dla właściciela bez kodu' <<<"$output")" -eq 6 ]
 }
 
 @test "karty: brak czesci i sekcji, brak Given/When/Then i zly rodzaj" {
@@ -347,6 +347,16 @@ karty() {
   run bash "$SKRYPT" "$ROOT"
   [ "$status" -eq 1 ]
   [[ "$output" == *"brak sekcji 'Reguły biznesowe' w części 'Dla właściciela'"* ]] || false
+  zamien "$K" '/^### Poza zakresem$/d'
+  run bash "$SKRYPT" "$ROOT"
+  [[ "$output" == *"brak sekcji 'Poza zakresem' w części 'Dla właściciela'"* ]] || false
+  zamien "$K" 's/^## Dla wykonawcy$/### Poza zakresem\
+\
+Bez załączników.\
+\
+## Dla wykonawcy/'
+  run bash "$SKRYPT" "$ROOT"
+  [[ "$output" != *"'Poza zakresem'"* ]] || false
   zamien "$K" 's/^rodzaj: pelna/rodzaj: skrocona/'
   run bash "$SKRYPT" "$ROOT"
   echo "$output"
