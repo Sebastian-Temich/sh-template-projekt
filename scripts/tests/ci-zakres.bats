@@ -69,3 +69,30 @@ wynik() { grep "^$1=" "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2; }
   ZDARZENIE=merge_group bash "$Z" 2>/dev/null
   [ "$(wynik kod)" = true ]
 }
+
+@test "e2e: tylko przy kodzie aplikacji i z playwright.config" {
+  export WZORCE_BEZ_E2E="scripts/* .claude/*"
+  echo x >>src/b.sh
+  pr
+  [ "$(wynik kod)" = true ] && [ "$(wynik e2e)" = false ]
+  echo "export default {}" >playwright.config.ts
+  echo x >>src/b.sh
+  pr
+  [ "$(wynik e2e)" = true ]
+}
+
+@test "e2e: zmiana tylko w scripts/ i docs/ bez E2E" {
+  export WZORCE_BEZ_E2E="scripts/* .claude/*"
+  echo "export default {}" >playwright.config.ts && git add -A && git commit -qm pw && BAZA="$(git rev-parse HEAD)"
+  echo x >>scripts/c.sh && echo x >>docs/a.md
+  pr
+  [ "$(wynik kod)" = true ] && [ "$(wynik e2e)" = false ]
+}
+
+@test "e2e: push smoke bez E2E, recznie z E2E" {
+  echo "export default {}" >playwright.config.ts
+  ZDARZENIE=push bash "$Z" 2>/dev/null
+  [ "$(wynik e2e)" = false ]
+  ZDARZENIE=workflow_dispatch bash "$Z" 2>/dev/null
+  [ "$(wynik e2e)" = true ]
+}

@@ -126,6 +126,10 @@ przed pierwszym wydaniem zrób je na projekcie testowym.
 bats scripts/tests
 ```
 
+Testy skryptów (`scripts/tests`) działają w CI tylko w repo szablonu (`.github/workflows/szablon.yml`).
+W projekcie ten workflow jest pominięty, a `ci.yml` nie ma joba `testy-skryptow`: testy czytały żywe
+`docs/` projektu i dawały fałszywe alarmy (sh-dryrun: 39 czerwonych przebiegów).
+
 ## Zawartość
 
 | Ścieżka | Zawartość |

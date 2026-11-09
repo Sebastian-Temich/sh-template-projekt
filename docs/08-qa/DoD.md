@@ -24,4 +24,4 @@ akceptacja_wlasciciela: false
 
 ## Checkpoint
 
-- [ ] Review etapu dało PASS (zaznacza reviewer, nie autor)
+- [-] Review etapu (nie dotyczy: raport QA nie ma review etapu, merge po zielonym CI)
