@@ -50,3 +50,21 @@ setup() {
   [ "$(yq -r '.jobs.gitleaks.env.GITLEAKS_SHA256' "$W/ci.yml")" = \
     "$(yq -r '.jobs["check-dod"].steps[] | select(.name == "Instalacja gitleaks (push)") | .env.GITLEAKS_SHA256' "$W/ci.yml")" ]
 }
+
+@test "ci.yml: bez testow skryptow szablonu (falszywe alarmy na zywych docs/ projektu)" {
+  [ "$(yq -r '.jobs | has("testy-skryptow")' "$W/ci.yml")" = false ]
+  ! grep -q 'bats scripts/tests' "$W/ci.yml"
+}
+
+@test "szablon.yml: testy skryptow tylko w repo szablonu" {
+  [ "$(yq -r '.jobs["testy-skryptow"].if' "$W/szablon.yml")" = 'github.event.repository.is_template' ]
+  yq -r '.jobs["testy-skryptow"].steps[].run // ""' "$W/szablon.yml" | grep -q 'bats scripts/tests'
+}
+
+@test "ci.yml: e2e za zakresem e2e, z cache przegladarek i limitami krokow" {
+  [ "$(yq -r '.jobs.e2e.if' "$W/ci.yml")" = "needs.check-dod.outputs.e2e == 'true'" ]
+  yq -r '.jobs.e2e.steps[].uses // ""' "$W/ci.yml" | grep -q '^actions/cache@'
+  yq -r '.jobs.e2e.steps[] | select(.uses // "" | test("^actions/cache@")) | .with.path' "$W/ci.yml" | grep -qx '~/.cache/ms-playwright'
+  [ "$(yq -r '.jobs.e2e.steps[].run // ""' "$W/ci.yml" | grep -c 'timeout [0-9]*m')" -eq 2 ]
+  yq -r '.jobs.e2e.steps[].run // ""' "$W/ci.yml" | grep -q '::error title='
+}

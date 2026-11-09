@@ -1,0 +1,31 @@
+# Testy skryptów szablonu (scripts/tests: check-dod, ci-zakres, deploy-prod, profil workera, workflow).
+# Działają tylko w repo szablonu: projekt dostaje ten plik przy --template, ale job jest tam pominięty
+# (repozytorium projektu nie jest szablonem), więc testy nie czytają żywych docs/ projektu.
+name: Szablon
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: szablon-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  testy-skryptow:
+    if: github.event.repository.is_template
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Instalacja bats i expect
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq bats expect
+      - name: Testy skryptów szablonu
+        run: bats scripts/tests

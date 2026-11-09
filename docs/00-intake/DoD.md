@@ -27,7 +27,7 @@ akceptacja_wlasciciela: true
 ## Checklisty jakości
 
 - [ ] Tryb procesu jest zapisany w `konfiguracja.md` z uzasadnieniem w jednym zdaniu
-- [ ] Obszary ryzyka są sprawdzone (auth, płatności, dane osobowe i migracje prod to minimum M z ADR)
+- [ ] Obszary ryzyka są ocenione; każdy na `tak` albo `do ustalenia` ma w specyfikacji „ADR w 04-architektura” (ADR pisze architekt, nie intake)
 - [ ] Kroki ręczne właściciela są wypisane
 - [ ] Hosting jest zapisany w `konfiguracja.md`
 
