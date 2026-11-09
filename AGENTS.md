@@ -44,7 +44,7 @@ Stałe dla tego projektu, uzupełnia intake lub zadanie szkieletu:
 | Build | (do uzupełnienia) |
 | Uruchomienie lokalne | (do uzupełnienia) |
 
-Zmiana kontraktu wymaga ADR w `docs/04-architektura/adr/`.
+Zmiana kontraktu wymaga ADR w `docs/04-plan/adr/`.
 
 Zależności projektowe instalujesz sam. Narzędzie z brew instalujesz sam i dopisujesz do
 `/Users/Shared/sh/Brewfile`. Sudo, ustawienia systemu i Docker Desktop zmienia wyłącznie właściciel.
@@ -52,7 +52,7 @@ Zależności projektowe instalujesz sam. Narzędzie z brew instalujesz sam i dop
 ## Gałęzie, commity, PR
 
 - Zadanie: `task/NR-slug`, gdzie `NR` to numer issue, np. `task/42-logowanie`.
-- Dokumenty etapu: `stage/ETAP`, np. `stage/04-architektura`.
+- Dokumenty etapu: `stage/ETAP`, np. `stage/04-plan`.
 - Nie commitujesz i nie pushujesz bezpośrednio na `main`. Wyjątek: orkiestrator i pliki wspólne.
 - Commit: krótko, w trybie rozkazującym, z numerem zadania, np. `#42: dodaj formularz logowania`.
 - Jeden PR na zadanie. Opis zawiera `Closes #NR` i wypełnioną checklistę z szablonu PR.
@@ -106,7 +106,8 @@ Każde zadanie kończy się raportem `docs/07-realizacja/T-NR.md`, szablon:
 - **Decyzje** (orkiestrator przenosi do `decyzje.md`),
 - **Drobne uwagi** (orkiestrator przenosi do `backlog-drobne.md`),
 - **Ryzyka** (dla reviewera i orkiestratora),
-- **Propozycje dla systemu** (`shctl task close` dopisuje je do zbiorczego PR miesiąca w `sh-system`).
+- **Propozycje dla systemu** (`shctl task close` dopisuje je jako komentarz do issue miesiąca
+  „Propozycje RRRR-MM” w `sh-system`).
 
 DoD zadania: kryteria z issue spełnione, testy zielone, raport `T-NR.md`, brak sekretów, migracje
 zgodne wstecz.

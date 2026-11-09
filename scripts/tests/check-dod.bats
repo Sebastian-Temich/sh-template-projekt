@@ -244,3 +244,36 @@ decyzja: biblioteka bez UI, QA w testach jednostkowych/'
   run bash "$SKRYPT" "$ROOT"
   [ "$status" -eq 0 ]
 }
+
+@test "wersja procesu 2: etap 04-plan, bez 04-architektura i 05-plan" {
+  [ -f "$ROOT/docs/04-plan/DoD.md" ]
+  [ ! -e "$ROOT/docs/04-architektura" ] && [ ! -e "$ROOT/docs/05-plan" ]
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 0 ]
+  rm "$ROOT/docs/04-plan/DoD.md"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"docs/04-plan/DoD.md: brak pliku"* ]] || false
+}
+
+@test "wersja procesu 1 (brak pola): etapy 04-architektura i 05-plan" {
+  grep -v '^wersja_procesu:' "$ROOT/docs/konfiguracja.md" >"$ROOT/k" && mv "$ROOT/k" "$ROOT/docs/konfiguracja.md"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"docs/04-architektura/DoD.md: brak pliku"* ]] || false
+  [[ "$output" == *"docs/05-plan/DoD.md: brak pliku"* ]] || false
+  for e in 04-architektura 05-plan; do
+    mkdir -p "$ROOT/docs/$e"
+    sed "s/^etap: .*/etap: $e/" "$ROOT/docs/04-plan/DoD.md" >"$ROOT/docs/$e/DoD.md"
+  done
+  rm -r "$ROOT/docs/04-plan"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 0 ]
+}
+
+@test "nieznana wersja procesu to blad" {
+  ustaw wersja_procesu 3
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"wersja_procesu='3'"* ]] || false
+}

@@ -12,8 +12,11 @@ ROOT="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 DOCS="$ROOT/docs"
 KONFIG="$DOCS/konfiguracja.md"
 
-# Etapy z DoD.md (tryb M). Tryb L z osobnymi etapami jest odłożony; stan realizacji jest w issue.
-ETAPY="00-intake 04-architektura 05-plan 06-zadania 08-qa wydanie"
+# Etapy z DoD.md (tryb M) według wersja_procesu z konfiguracja.md: 2 ma jeden etap 04-plan, a brak pola
+# (wersja 1, projekty sprzed migracji) osobne 04-architektura i 05-plan. Tryb L jest odłożony; stan
+# realizacji jest w issue.
+ETAPY_V1="00-intake 04-architektura 05-plan 06-zadania 08-qa wydanie"
+ETAPY_V2="00-intake 04-plan 06-zadania 08-qa wydanie"
 SEKCJE=("Dokumentacja" "Funkcjonalność" "Checklisty jakości" "Checkpoint")
 
 bledy=0
@@ -65,6 +68,15 @@ if [ ! -f "$KONFIG" ]; then
 fi
 
 TRYB="$(fm_get "$KONFIG" tryb_procesu)"
+WERSJA="$(fm_get "$KONFIG" wersja_procesu)"
+case "${WERSJA:-1}" in
+  1) ETAPY="$ETAPY_V1" ;;
+  2) ETAPY="$ETAPY_V2" ;;
+  *)
+    echo "BŁĄD: konfiguracja.md: wersja_procesu='$WERSJA', dozwolone 1 albo 2" >&2
+    exit 1
+    ;;
+esac
 ETAP_WDROZENIA="$(fm_get "$KONFIG" etap_wdrozenia)"
 
 case "$ETAP_WDROZENIA" in
