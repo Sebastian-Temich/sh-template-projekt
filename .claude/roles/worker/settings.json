@@ -64,6 +64,19 @@
       "Skill(tworca-wymagan)",
       "Skill(iskt-softwarehouse-tworca-wymagan)",
       "Skill(iskt-planista-realizacji)",
+      "Read(~/Documents/**)",
+      "Edit(~/Documents/**)",
+      "Read(~/Desktop/**)",
+      "Edit(~/Desktop/**)",
+      "Read(~/Downloads/**)",
+      "Edit(~/Downloads/**)",
+      "Read(~/Library/Mobile Documents/**)",
+      "Edit(~/Library/Mobile Documents/**)",
+      "Bash(gh gist *)",
+      "Bash(gh release upload *)",
+      "Bash(git * --no-index*)",
+      "Bash(git * --exec-path*)",
+      "Bash(git --exec-path*)",
       "Read(**/.env)",
       "Read(**/.env.local)",
       "Read(**/.env.*.local)",
@@ -118,7 +131,6 @@
       "Bash(git push *+*)",
       "Bash(git push *--delete*)",
       "Bash(git push * -d *)",
-      "Bash(git push * :*)",
       "Bash(git push *--mirror*)",
       "Bash(gh api *-X*)",
       "Bash(gh api *--method*)",
@@ -173,5 +185,44 @@
         ]
       }
     ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "allowUnsandboxedCommands": false,
+    "excludedCommands": [
+      "git *",
+      "gh *",
+      "shctl escalate *",
+      "/Users/Shared/sh/bin/shctl escalate *",
+      "brew install *"
+    ],
+    "network": {
+      "allowedDomains": [
+        "github.com",
+        "api.github.com",
+        "*.githubusercontent.com",
+        "codeload.github.com",
+        "registry.npmjs.org",
+        "cdn.playwright.dev",
+        "playwright.download.prss.microsoft.com",
+        "playwright.azureedge.net"
+      ],
+      "allowLocalBinding": true,
+      "allowUnixSockets": [
+        "~/.docker/run/docker.sock",
+        "/var/run/docker.sock"
+      ],
+      "allowMachLookup": [
+        "com.apple.trustd.agent"
+      ]
+    },
+    "filesystem": {
+      "allowWrite": [
+        "~/Library/pnpm",
+        "~/Library/Caches",
+        "~/.npm",
+        "~/.cache"
+      ]
+    }
   }
 }
