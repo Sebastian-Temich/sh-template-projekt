@@ -12,6 +12,8 @@ min_wolne_gb: 15
 env_files: []
 playwright_version: 1.61.1
 playwright_workers: 1
+# Adres stagingu dla joba qa-staging w CI (e2e i Lighthouse na gałęzi stage/08-qa); pusty: job pomija testy.
+staging_url: ""
 modele:
   orkiestrator: opus
   intake: opus
@@ -48,5 +50,6 @@ hosting:
 | `env_files` | Dodatkowe pliki env, które `shctl task dispatch` kopiuje do worktree workera obok `.env.local`. Ścieżki względne, bez `..`; tylko klucze testowe. Reviewer ich nie dostaje |
 | `playwright_version` | Przypięta wersja, ostatnia z działającym WebKit na macOS 14 Intel |
 | `playwright_workers` | Liczba workerów Playwright |
+| `staging_url` | Adres stagingu; job `qa-staging` w CI uruchamia na nim e2e (`BASE_URL`) i Lighthouse dla PR z `stage/08-qa` |
 | `modele` | Model per rola. `opus` to najmocniejszy dostępny Opus. Model reviewera wybiera właściciel; `domyslny` oznacza model z konfiguracji Codex. Decyzja właściciela z 2026-11-02: role Claude na `opus` (Opus 5.5), reviewer Codex na GPT-6-Astra (najmocniejszy model Codexa) z rozumowaniem `high` |
 | `hosting` | Proponuje intake, akceptuje właściciel (`zaakceptowany: true`). Domyślnie Vercel + Supabase Cloud (UE) na kontach klienta |

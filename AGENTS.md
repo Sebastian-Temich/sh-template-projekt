@@ -29,7 +29,7 @@ Stałe dla wszystkich projektów:
 | Python | uv |
 | Baza lokalnie | Supabase CLI, blok portów z `/Users/Shared/sh/porty.md` |
 | Docker | Tylko dla usług (Supabase) |
-| Testy E2E | Playwright w wersji z `konfiguracja.md`, chromium + webkit, headless, `workers` z `konfiguracja.md` |
+| Testy E2E | Playwright w wersji z `konfiguracja.md`, chromium + webkit, headless, `workers` z `konfiguracja.md`. Uruchamia je wyłącznie CI: job `e2e` na PR i `qa-staging` (PR z `stage/08-qa`, na `staging_url`, z Lighthouse). `playwright.config` bierze `baseURL` z `BASE_URL`, a `webServer` tylko bez `BASE_URL` |
 | Hosting | Z pola `hosting` w `konfiguracja.md` |
 
 Stałe dla tego projektu, uzupełnia intake lub zadanie szkieletu:
@@ -97,11 +97,14 @@ pętli, `$(...)`, heredoców, `cd` i przekierowań do pliku (szczegóły i przyk
   `gh issue close|edit|delete`, `gh gist`, `gh release upload`; `git -c`, `git -C`, `git config`,
   `--no-index`, `--exec-path`; `sudo`; `rm` poza worktree; `~/Documents`, `~/Desktop`, `~/Downloads`
   i iCloud (`~/Library/Mobile Documents`).
-- Sandbox: każde polecenie Bash poza `git`, `gh`, `shctl escalate` i `brew install` działa w sandboxie
+- Sandbox: każde polecenie Bash poza `git push|fetch|pull`, `gh`, `shctl escalate` i `brew install` działa w sandboxie
   Claude Code. Zapis tylko w worktree, `$TMPDIR` i cache narzędzi (`~/Library/pnpm`, `~/.npm`,
-  `~/.cache`, `~/Library/Caches`), sieć tylko do GitHuba, rejestru npm i pobierania Playwrighta.
+  `~/.cache`, `~/Library/Caches`, katalogi blokad pnpm `/tmp/pnpm-*-502`), sieć tylko do GitHuba, rejestru npm i pobierania Playwrighta.
   Odmowa sandboxa (`EPERM`, `403` z proxy) to granica roli: nie obchodzisz jej, opisujesz w „Ryzykach”
   albo eskalujesz, gdy blokuje kryterium.
+- E2E i Lighthouse nie działają lokalnie (przeglądarki nie startują w sandboxie). Lokalnie: lint, typy,
+  testy jednostkowe i build. Testy E2E piszesz, a uruchamia je CI; czerwony job `e2e` czytasz przez
+  `gh run view RUN --log-failed` i poprawiasz w zakresie zadania.
 - Do czytania plików używaj narzędzi Read, Grep i Glob, do zmian Edit i Write, nie `sed`, `cat >`
   ani skryptów `python3 -`/`node -e`.
 

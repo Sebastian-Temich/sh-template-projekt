@@ -173,9 +173,9 @@ bash_regula() {
   done
 }
 
-@test "sandbox: wlaczony bez wyjscia poza sandbox; git, gh i shctl escalate poza nim; siec z listy" {
+@test "sandbox: wlaczony bez wyjscia poza sandbox; git push|fetch|pull, gh i shctl escalate poza nim; siec z listy" {
   jq -e '.sandbox.enabled == true and .sandbox.allowUnsandboxedCommands == false' "$PROFIL" >/dev/null
-  for c in "git *" "gh *" "shctl escalate *"; do
+  for c in "git push *" "git fetch *" "git pull *" "gh *" "shctl escalate *"; do
     jq -e --arg c "$c" '.sandbox.excludedCommands | index($c)' "$PROFIL" >/dev/null || { echo "brak excluded $c"; false; }
   done
   for d in github.com api.github.com registry.npmjs.org; do
@@ -183,4 +183,24 @@ bash_regula() {
   done
   # Interpretery (node, npx, pnpm) zostają w sandboxie: to one omijały reguły Read (test 2026-11-09).
   [ "$(jq -r '[.sandbox.excludedCommands[] | select(test("^(node|npx|pnpm|npm|python|uv|bash|cat) "))] | length' "$PROFIL")" -eq 0 ]
+}
+
+@test "sandbox: pnpm 12 trzyma blokady w /tmp/pnpm-*-UID, zapis tam dozwolony (test sh-dryrun 2026-11-09)" {
+  for d in store-operation-locks dir-locks modules-swaps verify-deps-install-locks; do
+    jq -e --arg d "/private/tmp/pnpm-$d-502" '.sandbox.filesystem.allowWrite | index($d)' "$PROFIL" >/dev/null || { echo "brak $d"; false; }
+  done
+}
+
+@test "git czytajacy pliki spoza repo w sandboxie i w deny: --no-index, config, blame --contents, -C" {
+  ! jq -e '.sandbox.excludedCommands | index("git *")' "$PROFIL" >/dev/null || false
+  [ "$(jq -r '[.sandbox.excludedCommands[] | select(test("^git (diff|show|log|config|blame|grep|commit|cat-file|hash-object|-C)"))] | length' "$PROFIL")" -eq 0 ]
+  for c in "git diff --no-index /Users/x/Documents/a /dev/null" "git grep --no-index sekret /Users/x/Documents" \
+    "git config -f /Users/x/Documents/a --list" "git blame --contents /Users/x/Documents/a plik" \
+    "git -C /Users/x/Documents status"; do
+    [ "$(bash_regula "$c")" = deny ] || { echo "nie zablokowane: $c ($(bash_regula "$c"))"; false; }
+  done
+}
+
+@test "hook gh-plik-hook.sh na Bash: plik tresci PR i komentarzy tylko z /Users/Shared/sh (gh poza sandboxem)" {
+  jq -e '.hooks.PreToolUse | any(.matcher == "Bash" and (.hooks[0].command == "/Users/Shared/sh/bin/gh-plik-hook.sh || exit 2"))' "$PROFIL" >/dev/null
 }
