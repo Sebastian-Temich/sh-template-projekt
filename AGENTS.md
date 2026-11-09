@@ -88,7 +88,8 @@ pętli, `$(...)`, heredoców, `cd` i przekierowań do pliku (szczegóły i przyk
   `bash scripts/check-dod.sh`, `shctl escalate`; `rm`, `mv`, `cp`, `mkdir`, `touch` w worktree;
   pomocnicze `cat`, `head`, `tail`, `grep`, `wc`, `sort`, `uniq`, `cut`, `diff`, `echo`, `which`.
   Edycja `.env.example` jest dozwolona.
-- Zablokowane (krótka lista deny): sekrety i `.env*` poza `.env.example` (odczyt, edycja, komendy);
+- Zablokowane (krótka lista deny): sekrety i `.env*` poza `.env.example` (odczyt, edycja, komendy;
+  każdy wariant w każdym katalogu, np. `.env.ci`, `apps/web/.env`, pilnuje hook `env-hook.sh`);
   pliki wspólne, `.claude/` i konfiguracja produkcji; push na `main` i `production`, `vercel`,
   `supabase link|db push|secrets|functions deploy`; `git push --force|-f`, refspec z `+`, usuwanie
   gałęzi; `gh api` z `-X`/`--method` albo polami (`-f`, `-F`, `--field`, `--raw-field`, `--input`);

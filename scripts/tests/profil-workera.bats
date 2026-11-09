@@ -152,3 +152,8 @@ bash_regula() {
       | .hooks[] | select(.command == "/Users/Shared/sh/bin/odczyt-hook.sh || exit 2")' "$p" >/dev/null
   done
 }
+
+@test "pliki .env: hook env-hook.sh na odczyt, edycje, wyszukiwanie i Bash (wyjatek .env.example)" {
+  jq -e '.hooks.PreToolUse[] | select(.matcher == "Read|Edit|Write|MultiEdit|NotebookEdit|Glob|Grep|Bash")
+    | .hooks[] | select(.command == "/Users/Shared/sh/bin/env-hook.sh || exit 2")' "$PROFIL" >/dev/null
+}
