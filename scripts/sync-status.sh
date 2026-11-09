@@ -98,7 +98,7 @@ sekcja() {
 czas_pliku() {
   local c
   c="$(git -C "$ROOT" log --diff-filter=A --format=%ct -1 -- "$1" 2>/dev/null || true)"
-  [ -n "$c" ] || c="$(stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || true)"
+  [ -n "$c" ] || c="$(stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null || true)"
   [ -n "$c" ] || return 0
   date -u -r "$c" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d "@$c" +%Y-%m-%dT%H:%M:%SZ
 }
