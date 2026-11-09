@@ -80,17 +80,23 @@ Worker pisze tylko kod, testy, docs obszaru swojego zadania i własny raport.
 ## Profil workera (Bash)
 
 Worker działa w trybie `dontAsk` z `.claude/roles/worker/settings.json`: polecenie spoza listy
-dozwolonych dostaje odmowę bez pytania. Claude Code sprawdza każdą część potoku, `&&` i `;`
-osobno, więc każda część musi być dozwolona.
+dozwolonych dostaje odmowę bez pytania. Jedno wywołanie Bash to jedna prosta komenda: bez `&&`, `;`,
+pętli, `$(...)`, heredoców, `cd` i przekierowań do pliku (szczegóły i przykłady: skill `sh-worker`).
 
-- Dozwolone: `pnpm`, `npx`, `node`, `bats`, `shellcheck`, `gitleaks`, `bash scripts/check-dod.sh`;
-  `rm`, `mv`, `cp`, `mkdir`, `touch` na ścieżkach względnych w worktree; pomocnicze `head`,
-  `tail`, `grep`, `wc`, `sort`, `cut`, `echo`; git na swojej gałęzi, push tylko
-  `git push [-u] [-q] origin task/*`; `gh pr view|checks|diff|list`, `gh run view|list|watch`.
-- Zablokowane: push na `main` i `production`, force push (poza `--force-with-lease` na `task/*`),
-  usuwanie gałęzi, `gh api`, `gh pr merge`, `rm`/`mv`/`cp` ze ścieżką bezwzględną, `~` lub `..`,
-  na plikach wspólnych, `.claude/` i `.env*`, wszystko z `.env.prod*`.
-- Do czytania plików używaj narzędzi Read, Grep i Glob, nie `cat`.
+- Dozwolone: `git`, `gh`, `pnpm`, `npm`, `npx`, `node`, `uv`, lokalne `supabase` (init, start, stop,
+  status, migration, db reset/diff, gen types, test db), `gitleaks`, `bats`, `shellcheck`,
+  `bash scripts/check-dod.sh`, `shctl escalate`; `rm`, `mv`, `cp`, `mkdir`, `touch` w worktree;
+  pomocnicze `cat`, `head`, `tail`, `grep`, `wc`, `sort`, `uniq`, `cut`, `diff`, `echo`, `which`.
+  Edycja `.env.example` jest dozwolona.
+- Zablokowane (krótka lista deny): sekrety i `.env*` poza `.env.example` (odczyt, edycja, komendy;
+  każdy wariant w każdym katalogu, np. `.env.ci`, `apps/web/.env`, pilnuje hook `env-hook.sh`);
+  pliki wspólne, `.claude/` i konfiguracja produkcji; push na `main` i `production`, `vercel`,
+  `supabase link|db push|secrets|functions deploy`; `git push --force|-f`, refspec z `+`, usuwanie
+  gałęzi; `gh api` z `-X`/`--method` albo polami (`-f`, `-F`, `--field`, `--raw-field`, `--input`);
+  `gh secret|variable|auth|alias|extension|workflow`, `gh repo delete|edit`, `gh pr merge|close`,
+  `gh issue close|edit|delete`; `git -c`, `git -C`, `git config`; `sudo`; `rm` poza worktree.
+- Do czytania plików używaj narzędzi Read, Grep i Glob, do zmian Edit i Write, nie `sed`, `cat >`
+  ani skryptów `python3 -`/`node -e`.
 
 ## Raport zadania
 
