@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Przenosi stan issue, PR i CI z GitHuba do plików wspólnych:
 #   docs/06-zadania/index.md  tabela między znacznikami sync-status
-#   docs/status.md            we frontmatterze: liczniki, wstrzymania z /Users/Shared/sh/limity.md i
-#                             ostatnie_decyzje z docs/decyzje.md (dla DQL w docs/_dashboard.md)
+#   docs/status.md            we frontmatterze: liczniki i wstrzymania z /Users/Shared/sh/limity.md
 # Tylko dla orkiestratora, na main. Nic nie commituje. Bez zmian stanu nie zmienia plików.
 # Użycie: scripts/sync-status.sh [--dry-run] [--repo WLASCICIEL/NAZWA]
 set -euo pipefail
@@ -10,8 +9,6 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INDEKS="$ROOT/docs/06-zadania/index.md"
 STATUS="$ROOT/docs/status.md"
-DECYZJE="$ROOT/docs/decyzje.md"
-ILE_DECYZJI=5
 LIMITY="${SH_DIR:-/Users/Shared/sh}/limity.md"
 START='<!-- sync-status:start -->'
 KONIEC='<!-- sync-status:end -->'
@@ -141,23 +138,6 @@ jq -r --slurpfile prs "$TMP/prs.json" '
         else ltrimstr("|") | rtrimstr("|") | split("|") | map(gsub("^\\s+|\\s+$"; "")) | join(" · ")
         end)
   | "wstrzymania=\(tojson)"' >>"$TMP/liczniki"
-
-# Ostatnie decyzje z tabeli decyzje.md, najnowsza pierwsza, dla zapytań DQL w _dashboard.md.
-# Zapis jako lista map YAML w jednej linii, z odstępem po „:” i „,” (zgodny z YAML 1.1 i 1.2).
-{
-  if [ -f "$DECYZJE" ]; then
-    grep -E '^\| ' "$DECYZJE" | grep -vE '^\|[- |:]*$' | awk 'n++' || true
-  fi
-} | jq -Rsr --argjson ile "$ILE_DECYZJI" '
-  def mapa: "{" + (to_entries | map("\(.key | tojson): \(.value | tojson)") | join(", ")) + "}";
-  split("\n")
-  | map(gsub("^\\s+|\\s+$"; "") | select(length > 0)
-      | ltrimstr("|") | rtrimstr("|")
-      | [splits("(?<!\\\\)\\|") | gsub("^\\s+|\\s+$"; "") | gsub("\\\\\\|"; "|")]
-      | {data: .[0], zrodlo: .[1], pytanie: .[2], decyzja: .[3]}
-      | map_values(. // ""))
-  | .[-$ile:] | reverse
-  | "ostatnie_decyzje=[\(map(mapa) | join(", "))]"' >>"$TMP/liczniki"
 
 # Podmienia klucze wyłącznie we frontmatterze; brakujące dopisuje na jego końcu.
 wstaw_liczniki() {

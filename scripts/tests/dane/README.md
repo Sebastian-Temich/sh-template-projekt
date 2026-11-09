@@ -1,7 +1,7 @@
 # Dane testowe skryptów
 
 `docs/` to zamrożona kopia początkowego `docs/` szablonu: `konfiguracja.md`, `status.md`,
-`decyzje.md`, `_dashboard.md`, `06-zadania/index.md` i `DoD.md` każdego etapu. Testy w
+`decyzje.md`, `06-zadania/index.md` i `DoD.md` każdego etapu. Testy w
 `scripts/tests/` kopiują ją do katalogu tymczasowego i tam zmieniają.
 
 Testy nigdy nie czytają prawdziwego `docs/` repo. W projekcie zmienia je orkiestrator (status,

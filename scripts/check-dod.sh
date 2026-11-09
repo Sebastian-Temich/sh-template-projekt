@@ -12,8 +12,8 @@ ROOT="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 DOCS="$ROOT/docs"
 KONFIG="$DOCS/konfiguracja.md"
 
-ETAPY="00-intake 01-brief 02-design 03-wymagania 04-architektura 05-plan 06-zadania 07-realizacja 08-qa wydanie"
-ETAPY_M="00-intake 04-architektura 05-plan 06-zadania 07-realizacja 08-qa wydanie"
+# Etapy z DoD.md (tryb M). Tryb L z osobnymi etapami jest odłożony; stan realizacji jest w issue.
+ETAPY="00-intake 04-architektura 05-plan 06-zadania 08-qa wydanie"
 SEKCJE=("Dokumentacja" "Funkcjonalność" "Checklisty jakości" "Checkpoint")
 
 bledy=0
@@ -57,14 +57,6 @@ policz_checkboxy() {
       else zle++
     }
     END { print puste + 0, pelne + 0, nd + 0, zle + 0 }' "$1"
-}
-
-etap_w_trybie() {
-  case "$2" in
-    S) return 1 ;;
-    L) return 0 ;;
-    M) case " $ETAPY_M " in *" $1 "*) return 0 ;; *) return 1 ;; esac ;;
-  esac
 }
 
 if [ ! -f "$KONFIG" ]; then
@@ -129,9 +121,10 @@ EOF
       [ "$pelne" -gt 0 ] || blad "$wzgl: status done bez żadnego zaznaczonego pola"
       ;;
     pominiety)
-      # Etap trybu pomija tylko shctl stage skip --notatka, które zapisuje uzasadnienie.
-      if etap_w_trybie "$etap" "$TRYB" && [ -z "$(fm_get "$plik" uzasadnienie_pominiecia)" ]; then
-        blad "$wzgl: status pominiety w etapie trybu $TRYB wymaga uzasadnienie_pominiecia (shctl stage skip --notatka)"
+      # Pominięcie etapu to decyzja orkiestratora (shctl decision add) zapisana w polu decyzja.
+      # Tryb S nie ma etapów: new-project oznacza wszystkie jako pominiety.
+      if [ "$TRYB" != S ] && [ -z "$(fm_get "$plik" decyzja)" ]; then
+        blad "$wzgl: status pominiety wymaga pola decyzja (shctl decision add, potem decyzja: \"...\" w DoD.md)"
       fi
       ;;
     *) blad "$wzgl: status='$status', dozwolone todo|in-progress|review|done|escalated|pominiety" ;;

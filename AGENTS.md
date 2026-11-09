@@ -106,7 +106,7 @@ Każde zadanie kończy się raportem `docs/07-realizacja/T-NR.md`, szablon:
 - **Decyzje** (orkiestrator przenosi do `decyzje.md`),
 - **Drobne uwagi** (orkiestrator przenosi do `backlog-drobne.md`),
 - **Ryzyka** (dla reviewera i orkiestratora),
-- **Propozycje dla systemu** (orkiestrator zbiera do `sh-system/docs/propozycje.md`).
+- **Propozycje dla systemu** (`shctl task close` dopisuje je do zbiorczego PR miesiąca w `sh-system`).
 
 DoD zadania: kryteria z issue spełnione, testy zielone, raport `T-NR.md`, brak sekretów, migracje
 zgodne wstecz.

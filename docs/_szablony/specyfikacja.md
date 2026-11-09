@@ -51,7 +51,7 @@ Domyślnie Vercel + Supabase Cloud (region UE) na kontach klienta.
 
 ## Design
 
-Skąd pochodzi design, co jest ustalone i co właściciel dostarcza do `docs/02-design/zrodla/`.
+Skąd pochodzi design, co jest ustalone i co właściciel dostarcza do `docs/00-intake/zrodla/` (przez skrzynkę).
 
 ## Kroki ręczne właściciela
 

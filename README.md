@@ -139,23 +139,23 @@ W projekcie ten workflow jest pominięty, a `ci.yml` nie ma joba `testy-skryptow
 | `CHANGELOG.md` | Zmiany projektu, aktualizowane przez `shctl task close` |
 | `docs/` | Etapy z `DoD.md`, pliki wspólne, `konfiguracja.md` |
 | `docs/_szablony/` | Szablony dokumentów |
-| `docs/_dashboard.md` | Widok Dataview (tylko DQL) w Obsidianie: etapy, zadania, eskalacje, decyzje, wstrzymania, „Czeka na Ciebie” |
 | `scripts/check-dod.sh` | Walidacja DoD, zakaz hooków git i kodu wykonywalnego w `docs/`, działa w CI |
 | `scripts/setup-labels.sh` | Etykiety GitHub, idempotentnie |
 | `scripts/sync-status.sh` | Stan issue, PR i CI do `06-zadania/index.md` i `status.md`, wstrzymania z `/Users/Shared/sh/limity.md`, ostatnie decyzje |
 | `scripts/deploy-prod.sh` | Wdrożenie produkcyjne, tylko dla właściciela; testy w `scripts/tests/` |
-| `.claude/roles/` | Profile uprawnień, uruchamiane przez `claude --settings` |
+| `.claude/roles/worker/` | Profil uprawnień workera, uruchamiany przez `claude --settings` |
 | `.github/` | Szablony issue i PR, CI, migracje staging, zablokowany workflow deploy produkcyjny |
 
 ## Tryby w DoD
 
 Każdy `DoD.md` zawiera checklistę trybu M. Punkty tylko dla trybu L stoją w bloku
-`<!-- tylko-tryb:L -->` i `check-dod.sh` liczy je wyłącznie w trybie L. Etapy `01-brief`,
-`02-design` i `03-wymagania` należą tylko do trybu L. Tryb S nie ma DoD etapów: jego DoD to issue i
-checklista PR.
+`<!-- tylko-tryb:L -->` i `check-dod.sh` liczy je wyłącznie w trybie L. Tryb L (z etapami briefu,
+designu i wymagań) jest odłożony. `07-realizacja` nie ma `DoD.md`: stan realizacji jest w issue. Tryb
+S nie ma DoD etapów: jego DoD to issue i checklista PR.
 
 Pole, które w projekcie nie ma zastosowania (np. E2E w bibliotece bez UI), zapisujemy jako
 `- [-] treść pola (nie dotyczy: powód)`. `check-dod.sh` liczy je jak zamknięte, a `[-]` bez powodu
-odrzuca. Etap trybu M pomija się tylko przez `shctl stage skip ETAP --notatka "..."`, które zapisuje
-`uzasadnienie_pominiecia` we frontmatterze; bez niego `check-dod.sh` odrzuca status `pominiety`.
+odrzuca. Etap trybu M pomija się tylko z decyzją: orkiestrator zapisuje ją przez `shctl decision add` i
+ustawia w `DoD.md` na `main` `status: pominiety` oraz `decyzja: "..."`; bez pola `decyzja`
+`check-dod.sh` odrzuca status `pominiety`.
 Frontmatter `DoD.md` (`status`, `iteracja`) zmienia tylko shctl na `main`, nigdy gałąź `stage/ETAP`.
