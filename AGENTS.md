@@ -99,7 +99,7 @@ pętli, `$(...)`, heredoców, `cd` i przekierowań do pliku (szczegóły i przyk
   i iCloud (`~/Library/Mobile Documents`).
 - Sandbox: każde polecenie Bash poza `git`, `gh`, `shctl escalate` i `brew install` działa w sandboxie
   Claude Code. Zapis tylko w worktree, `$TMPDIR` i cache narzędzi (`~/Library/pnpm`, `~/.npm`,
-  `~/.cache`, `~/Library/Caches`), sieć tylko do GitHuba, rejestru npm i pobierania Playwrighta.
+  `~/.cache`, `~/Library/Caches`, katalogi blokad pnpm `/tmp/pnpm-*-502`), sieć tylko do GitHuba, rejestru npm i pobierania Playwrighta.
   Odmowa sandboxa (`EPERM`, `403` z proxy) to granica roli: nie obchodzisz jej, opisujesz w „Ryzykach”
   albo eskalujesz, gdy blokuje kryterium.
 - Do czytania plików używaj narzędzi Read, Grep i Glob, do zmian Edit i Write, nie `sed`, `cat >`

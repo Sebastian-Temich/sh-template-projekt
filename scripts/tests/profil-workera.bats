@@ -184,3 +184,9 @@ bash_regula() {
   # Interpretery (node, npx, pnpm) zostają w sandboxie: to one omijały reguły Read (test 2026-11-09).
   [ "$(jq -r '[.sandbox.excludedCommands[] | select(test("^(node|npx|pnpm|npm|python|uv|bash|cat) "))] | length' "$PROFIL")" -eq 0 ]
 }
+
+@test "sandbox: pnpm 12 trzyma blokady w /tmp/pnpm-*-UID, zapis tam dozwolony (test sh-dryrun 2026-11-09)" {
+  for d in store-operation-locks dir-locks modules-swaps verify-deps-install-locks; do
+    jq -e --arg d "/private/tmp/pnpm-$d-502" '.sandbox.filesystem.allowWrite | index($d)' "$PROFIL" >/dev/null || { echo "brak $d"; false; }
+  done
+}

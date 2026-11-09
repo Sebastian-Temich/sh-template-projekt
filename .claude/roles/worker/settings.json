@@ -221,7 +221,11 @@
         "~/Library/pnpm",
         "~/Library/Caches",
         "~/.npm",
-        "~/.cache"
+        "~/.cache",
+        "/private/tmp/pnpm-store-operation-locks-502",
+        "/private/tmp/pnpm-dir-locks-502",
+        "/private/tmp/pnpm-modules-swaps-502",
+        "/private/tmp/pnpm-verify-deps-install-locks-502"
       ]
     }
   }
