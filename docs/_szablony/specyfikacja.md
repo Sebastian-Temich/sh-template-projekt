@@ -19,13 +19,34 @@ Poza zakresem:
 
 ## Wymagania
 
-Historyjki z priorytetem (musi, powinno, może) i kryteriami Given/When/Then.
+Historyjki z priorytetem (musi, powinno, może) i kryteriami Given/When/Then. Numeracja dwucyfrowa:
+W-01, W-02 … ta sama w kartach, zadaniach i kryteriach (`W-01/K1`).
 
-### W-1: TYTUŁ (musi)
+### W-01: TYTUŁ (musi)
 
 Jako ROLA chcę DZIAŁANIE, aby CEL.
 
 - Given STAN, when DZIAŁANIE, then WYNIK.
+
+Wymaganie bez funkcji użytkowej (np. wydajność, SEO) ma w nagłówku „(bez karty: powód)”, np.
+`### W-09: Wydajność (musi) (bez karty: wymaganie niefunkcjonalne)`.
+
+## Karty funkcji
+
+Każda funkcja użytkowa ma kartę `docs/00-intake/funkcje/W-NN.md` (wzór `docs/_szablony/karta-funkcji.md`)
+z częścią „Dla właściciela” (opis, przebieg, stany ekranu z tekstami, reguły, poza zakresem, do
+potwierdzenia) i „Dla wykonawcy” (pola i walidacja, kody odpowiedzi, dostępność, kryteria `W-NN/Kn`,
+design i ADR).
+Specyfikacja trzyma historyjki, karta szczegóły.
+
+| Wymaganie | Karta | Rodzaj (pelna, skrocona) | Ekrany z designu |
+|---|---|---|---|
+| W-01 | `funkcje/W-01.md` | | |
+
+## Lista startowa
+
+Rzeczy zewnętrzne od właściciela (konta, dostępy, domeny, klucze testowe, materiały):
+`docs/00-intake/lista-startowa.md`. Realizacja nie startuje, dopóki lista nie jest kompletna.
 
 ## Typ projektu
 
@@ -70,4 +91,13 @@ Skąd pochodzi design, co jest ustalone i co właściciel dostarcza do `docs/00-
 
 ## Tryb procesu
 
-Tryb i uzasadnienie w jednym zdaniu. Założenia i najwyżej 3 otwarte pytania z proponowanymi odpowiedziami.
+Tryb i uzasadnienie w jednym zdaniu.
+
+## Do potwierdzenia
+
+Zbiorcza lista z sekcji „Do potwierdzenia” wszystkich kart i założeń specyfikacji. Checkpoint
+specyfikacji pokazuje właścicielowi części „Dla właściciela” kart i tę listę.
+
+| Nr | Karta | Pytanie albo założenie | Proponowana odpowiedź | Źródło (zdecyduj sam, luka bez pytania) |
+|---|---|---|---|---|
+

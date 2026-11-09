@@ -1,6 +1,6 @@
 # Plan: NAZWA
 
-Źródło: `docs/00-intake/specyfikacja.md` w rewizji SHA. Wymagania przywołujemy numerami `W-n`.
+Źródło: `docs/00-intake/specyfikacja.md` w rewizji SHA. Wymagania przywołujemy numerami `W-NN`.
 Etap `04-plan`: krótka architektura i plan kamieni milowych w jednym dokumencie. Zadania rozpisuje
 etap `06-zadania` (`docs/06-zadania/zadania.yaml`).
 

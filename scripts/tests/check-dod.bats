@@ -277,3 +277,111 @@ decyzja: biblioteka bez UI, QA w testach jednostkowych/'
   [ "$status" -eq 1 ]
   [[ "$output" == *"wersja_procesu='3'"* ]] || false
 }
+
+# Specyfikacja z W-01 (karta) i W-02 (bez karty) oraz poprawna karta pełna W-01.
+karty() {
+  mkdir -p "$ROOT/docs/00-intake/funkcje"
+  printf '# Specyfikacja\n\n### W-01: Formularz (musi)\n\nx\n\n### W-02: Wydajność (musi) (bez karty: niefunkcjonalne)\n\ny\n' \
+    >"$ROOT/docs/00-intake/specyfikacja.md"
+  K="$ROOT/docs/00-intake/funkcje/W-01.md"
+  {
+    printf -- '---\nwymaganie: W-01\nrodzaj: pelna\n---\n\n# Karta funkcji W-01: Formularz\n\n'
+    printf '<!-- komentarz z [?], TODO i `kodem` nie jest luką -->\n\n## Dla właściciela\n\n'
+    for s in "Opis" "Przebieg" "Stany ekranu" "Reguły biznesowe" "Poza zakresem" "Do potwierdzenia"; do
+      printf '### %s\n\nCzy to pytanie? Wiadomość do 5000 znaków.\n\n' "$s"
+    done
+    printf '## Dla wykonawcy\n\n'
+    for s in "Wejście" "Pola i walidacja" "Odpowiedzi i błędy" "Dostępność" "Przypadki brzegowe" \
+      "Kryteria akceptacji" "Design i ADR"; do
+      printf '### %s\n\nKod 429, `aria-live`.\n\n' "$s"
+    done
+    printf '```\nTODO w bloku kodu nie jest luką\n```\n'
+  } >"$K"
+  zamien "$K" 's/^### Kryteria akceptacji$/### Kryteria akceptacji\
+\
+- W-01\/K1: Given formularz, when wysyłam, then widzę sukces./'
+}
+
+@test "karty: poprawna karta i wymaganie bez karty przechodza" {
+  karty
+  run bash "$SKRYPT" "$ROOT"
+  echo "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "karty: brak karty funkcji uzytkowej to blad" {
+  karty
+  rm "$K"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"funkcje/W-01.md: brak karty funkcji dla W-01"* ]] || false
+}
+
+@test "karty: numeracja jednocyfrowa to blad" {
+  karty
+  zamien "$ROOT/docs/00-intake/specyfikacja.md" 's/### W-01:/### W-1:/'
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"W-1: numeracja wymagań ma dwie cyfry"* ]] || false
+}
+
+@test "karty: luki [?], samotny ? i TODO sa bledami" {
+  karty
+  printf '| Pusty | ? | x |\n- limit [?]\n- TODO: komunikat\n' >>"$K"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [ "$(grep -c 'otwarta luka' <<<"$output")" -eq 3 ]
+}
+
+@test "karty: czesc dla wlasciciela bez kodu, kodow HTTP i atrybutow" {
+  karty
+  zamien "$K" 's/^Czy to pytanie? Wiadomość do 5000 znaków.$/Serwer zwraca 429 i ustawia `aria-live`./'
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [ "$(grep -c 'część dla właściciela bez kodu' <<<"$output")" -eq 6 ]
+}
+
+@test "karty: brak czesci i sekcji, brak Given/When/Then i zly rodzaj" {
+  karty
+  zamien "$K" '/^### Reguły biznesowe$/d'
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"brak sekcji 'Reguły biznesowe' w części 'Dla właściciela'"* ]] || false
+  zamien "$K" '/^### Poza zakresem$/d'
+  run bash "$SKRYPT" "$ROOT"
+  [[ "$output" == *"brak sekcji 'Poza zakresem' w części 'Dla właściciela'"* ]] || false
+  zamien "$K" 's/^## Dla wykonawcy$/### Poza zakresem\
+\
+Bez załączników.\
+\
+## Dla wykonawcy/'
+  run bash "$SKRYPT" "$ROOT"
+  [[ "$output" != *"'Poza zakresem'"* ]] || false
+  zamien "$K" 's/^rodzaj: pelna/rodzaj: skrocona/'
+  run bash "$SKRYPT" "$ROOT"
+  echo "$output"
+  [ "$status" -eq 0 ]
+  zamien "$K" 's/Given formularz/Formularz/'
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"bez kryterium Given/When/Then"* ]] || false
+  zamien "$K" '/^## Dla wykonawcy$/d'
+  run bash "$SKRYPT" "$ROOT"
+  [[ "$output" == *"brak części 'Dla wykonawcy'"* ]] || false
+  zamien "$K" 's/^rodzaj: skrocona/rodzaj: inna/'
+  run bash "$SKRYPT" "$ROOT"
+  [[ "$output" == *"rodzaj='inna'"* ]] || false
+}
+
+@test "karty: tryb S i projekt bez katalogu funkcje nie sa sprawdzane" {
+  karty
+  rm "$K"
+  ustaw tryb_procesu S
+  for e in 00-intake 04-plan 06-zadania 08-qa wydanie; do status_etapu "$e" pominiety; done
+  run bash "$SKRYPT" "$ROOT"
+  [[ "$output" != *"karty funkcji"* ]] || false
+  ustaw tryb_procesu M
+  rm -r "$ROOT/docs/00-intake/funkcje"
+  run bash "$SKRYPT" "$ROOT"
+  [[ "$output" != *"karty funkcji"* ]] || false
+}
