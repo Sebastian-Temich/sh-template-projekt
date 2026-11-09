@@ -2,7 +2,7 @@
 wersja_procesu: 2
 etap_wdrozenia: A
 tryb_procesu: M
-auto_merge_S: false
+odbior_S: reczny
 # max_local: limit workerów Maca jest w /Users/Shared/sh/konfiguracja.md (domyślnie 2). Wpis tutaj
 # może go tylko obniżyć dla tego projektu, np. max_local: 1.
 max_review_queue: 3
@@ -40,7 +40,7 @@ hosting:
 |---|---|
 | `etap_wdrozenia` | `A` albo `B`. Etap A: tylko tryby S i M, tylko `runner:local` i `wykonawca:claude` |
 | `tryb_procesu` | `S`, `M` albo `L` (L od etapu B). Nowy projekt zaczyna od M lub L. Proponuje `sh-intake`, akceptuje właściciel |
-| `auto_merge_S` | Czy orkiestrator merguje zlecenia S sam. Włączamy po kilku udanych zleceniach S |
+| `odbior_S` | Odbiór zleceń S: `reczny` (domyślnie; merge po Twoim „odbieram #NR”) albo `auto_bez_zmian_widocznych` (zlecenie z etykietą `widoczne:nie`, bez zmian widocznych dla użytkownika, merguje się po PASS i zielonym CI, a Ty dostajesz powiadomienie). Zlecenie ze zmianą widoczną zawsze czeka na Twój odbiór |
 | `max_local` | Opcjonalne obniżenie limitu workerów dla projektu; limit Maca (domyślnie 2) jest w `/Users/Shared/sh/konfiguracja.md` |
 | `max_review_queue` | Liczba PR czekających na review, przy której dispatch staje |
 | `min_wolne_gb` | Minimum wolnego miejsca na dysku |

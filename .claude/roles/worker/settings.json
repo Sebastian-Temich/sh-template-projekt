@@ -99,7 +99,7 @@
       "Bash(*.env.test*)",
       "Bash(*.env.staging*)",
       "Bash(*.env.prod*)",
-      "Edit(docs/status.md)",
+      "Edit(docs/Projekt.md)",
       "Edit(docs/decyzje.md)",
       "Edit(docs/metryki.md)",
       "Edit(docs/backlog-drobne.md)",

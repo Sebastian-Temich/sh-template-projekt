@@ -1,6 +1,6 @@
 # Dane testowe skryptów
 
-`docs/` to zamrożona kopia początkowego `docs/` szablonu: `konfiguracja.md`, `status.md`,
+`docs/` to zamrożona kopia początkowego `docs/` szablonu: `konfiguracja.md`, `Projekt.md`,
 `decyzje.md`, `06-zadania/index.md` i `DoD.md` każdego etapu. Testy w
 `scripts/tests/` kopiują ją do katalogu tymczasowego i tam zmieniają.
 

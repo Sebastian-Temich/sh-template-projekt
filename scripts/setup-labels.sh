@@ -26,6 +26,7 @@ wykonawca:claude|5319E7|Wykonawca: Claude
 wykonawca:codex|006B75|Wykonawca: Codex (etap B)
 tryb:S|C2E0C6|Zlecenie w trybie S
 tryb:M|FEF2C0|Zlecenie w trybie M
+widoczne:nie|BFDADC|Zlecenie S bez zmian widocznych dla użytkownika (odbior_S)
 status:todo|EDEDED|Czeka na realizację
 status:in-progress|FBCA04|W realizacji
 status:review|0052CC|PR czeka na review
