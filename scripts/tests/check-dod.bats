@@ -277,3 +277,77 @@ decyzja: biblioteka bez UI, QA w testach jednostkowych/'
   [ "$status" -eq 1 ]
   [[ "$output" == *"wersja_procesu='3'"* ]] || false
 }
+
+# Specyfikacja z W-1 (karta) i W-2 (bez karty) oraz poprawna karta pełna W-1.
+karty() {
+  mkdir -p "$ROOT/docs/00-intake/funkcje"
+  printf '# Specyfikacja\n\n### W-1: Formularz (musi)\n\nx\n\n### W-2: Wydajność (musi) (bez karty: niefunkcjonalne)\n\ny\n' \
+    >"$ROOT/docs/00-intake/specyfikacja.md"
+  {
+    printf -- '---\nwymaganie: W-1\nrodzaj: pelna\n---\n\n# Karta funkcji W-1: Formularz\n\n'
+    printf '<!-- komentarz z [?] i TODO nie jest luką -->\n\n'
+    for s in "Wejście" "Przebieg" "Stany ekranu" "Dane wejścia i wyjścia" "Reguły biznesowe" \
+      "Przypadki brzegowe" "Kryteria akceptacji" "Poza zakresem" "Założenia modelu"; do
+      printf '## %s\n\nCzy to pytanie? Treść.\n\n' "$s"
+    done
+    printf '```\nTODO w bloku kodu nie jest luką\n```\n'
+  } >"$ROOT/docs/00-intake/funkcje/W-1.md"
+  zamien "$ROOT/docs/00-intake/funkcje/W-1.md" 's/^## Kryteria akceptacji$/## Kryteria akceptacji\
+\
+- W-1\/K1: Given formularz, when wysyłam, then widzę sukces./'
+}
+
+@test "karty: poprawna karta i wymaganie bez karty przechodza" {
+  karty
+  run bash "$SKRYPT" "$ROOT"
+  echo "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "karty: brak karty funkcji uzytkowej to blad" {
+  karty
+  rm "$ROOT/docs/00-intake/funkcje/W-1.md"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"funkcje/W-1.md: brak karty funkcji dla W-1"* ]] || false
+}
+
+@test "karty: luki [?], samotny ? i TODO sa bledami" {
+  karty
+  printf '| Pusty | ? | x |\n- limit [?]\n- TODO: komunikat\n' >>"$ROOT/docs/00-intake/funkcje/W-1.md"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [ "$(grep -c 'otwarta luka' <<<"$output")" -eq 3 ]
+}
+
+@test "karty: brak sekcji, brak Given/When/Then i zly rodzaj" {
+  karty
+  zamien "$ROOT/docs/00-intake/funkcje/W-1.md" '/^## Reguły biznesowe$/d'
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"brak sekcji 'Reguły biznesowe'"* ]] || false
+  zamien "$ROOT/docs/00-intake/funkcje/W-1.md" 's/^rodzaj: pelna/rodzaj: skrocona/'
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 0 ]
+  zamien "$ROOT/docs/00-intake/funkcje/W-1.md" 's/Given formularz/Formularz/'
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"bez kryterium Given/When/Then"* ]] || false
+  zamien "$ROOT/docs/00-intake/funkcje/W-1.md" 's/^rodzaj: skrocona/rodzaj: inna/'
+  run bash "$SKRYPT" "$ROOT"
+  [[ "$output" == *"rodzaj='inna'"* ]] || false
+}
+
+@test "karty: tryb S i projekt bez katalogu funkcje nie sa sprawdzane" {
+  karty
+  rm "$ROOT/docs/00-intake/funkcje/W-1.md"
+  ustaw tryb_procesu S
+  for e in 00-intake 04-plan 06-zadania 08-qa wydanie; do status_etapu "$e" pominiety; done
+  run bash "$SKRYPT" "$ROOT"
+  [[ "$output" != *"karty funkcji"* ]] || false
+  ustaw tryb_procesu M
+  rm -r "$ROOT/docs/00-intake/funkcje"
+  run bash "$SKRYPT" "$ROOT"
+  echo "$output"
+  [[ "$output" != *"karty funkcji"* ]] || false
+}

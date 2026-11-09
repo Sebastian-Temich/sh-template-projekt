@@ -159,6 +159,10 @@ Eskalujesz tylko gdy:
 - wymagania są sprzeczne,
 - jest ryzyko bezpieczeństwa lub prawne.
 
+Niejasności UX (stan ekranu, komunikat, przebieg) i reguły biznesowej worker nie zgaduje i nie
+rozstrzyga sam: `shctl escalate --typ pytanie` i dalej części niezależne. Pytanie nie jest iteracją ani
+porażką i nie zwalnia slotu. Szczegóły funkcji są w karcie `docs/00-intake/funkcje/W-N.md`.
+
 Eskalacja to `shctl escalate`, który zakłada `docs/07-realizacja/escalations/E-NNN.md` i wysyła
 powiadomienie. Eskalacja nie zatrzymuje zadań niezależnych.
 

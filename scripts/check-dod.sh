@@ -143,6 +143,73 @@ EOF
   esac
 done
 
+# Karty funkcji (sh-intake, docs/_szablony/karta-funkcji.md): każde wymaganie „### W-N: …” ze
+# specyfikacji ma kartę docs/00-intake/funkcje/W-N.md, chyba że nagłówek ma „(bez karty: powód)”.
+# Karta ma sekcje swojego rodzaju (pelna albo skrocona), kryteria Given/When/Then i żadnej luki: „[?]”,
+# samotnego „?” ani TODO poza blokami kodu i komentarzami HTML. Sprawdzane w trybie M i L, gdy projekt
+# ma katalog docs/00-intake/funkcje/ (projekty sprzed SH-lite F4 go nie mają).
+SEKCJE_KARTY_PELNEJ=("Wejście" "Przebieg" "Stany ekranu" "Dane wejścia i wyjścia" "Reguły biznesowe"
+  "Przypadki brzegowe" "Kryteria akceptacji" "Poza zakresem" "Założenia modelu")
+SEKCJE_KARTY_SKROCONEJ=("Wejście" "Przebieg" "Stany ekranu" "Kryteria akceptacji" "Poza zakresem"
+  "Założenia modelu")
+KARTY="$DOCS/00-intake/funkcje"
+SPEC="$DOCS/00-intake/specyfikacja.md"
+
+# Linie z luką: numer i treść, poza blokami kodu i komentarzami HTML.
+luki_karty() {
+  awk '
+    /^[ \t]*(```|~~~)/ { kod = !kod; next }
+    kod { next }
+    {
+      l = $0
+      if (kom) { if (index(l, "-->")) { l = substr(l, index(l, "-->") + 3); kom = 0 } else next }
+      while (index(l, "<!--")) {
+        p = index(l, "<!--"); r = substr(l, p + 4)
+        if (index(r, "-->")) l = substr(l, 1, p - 1) substr(r, index(r, "-->") + 3)
+        else { l = substr(l, 1, p - 1); kom = 1 }
+      }
+      if (l ~ /\[\?\]/ || l ~ /(^|[ \t|(])\?([ \t|).,;:]|$)/ || l ~ /(^|[^A-Za-z])TODO([^A-Za-z]|$)/)
+        print NR ": " l
+    }' "$1"
+}
+
+if [ "$TRYB" != S ] && [ -d "$KARTY" ] && [ -f "$SPEC" ]; then
+  while IFS= read -r w; do
+    [ -f "$KARTY/$w.md" ] || blad "docs/00-intake/funkcje/$w.md: brak karty funkcji dla $w (albo „(bez karty: powód)” w nagłówku specyfikacji)"
+  done < <(awk '
+    /^[ \t]*(```|~~~)/ { kod = !kod; next }
+    kod { next }
+    /^### W-[0-9]+[:  ]/ && !/\(bez karty: *[^ )]/ { sub(/^### /, ""); sub(/[:  ].*$/, ""); print }' "$SPEC")
+fi
+if [ "$TRYB" != S ] && [ -d "$KARTY" ]; then
+  for karta in "$KARTY"/W-*.md; do
+    [ -e "$karta" ] || continue
+    wzgl="docs/00-intake/funkcje/$(basename "$karta")"
+    if ! ma_frontmatter "$karta"; then
+      blad "$wzgl: brak frontmattera (wymaganie, rodzaj)"
+      continue
+    fi
+    [ "$(fm_get "$karta" wymaganie)" = "$(basename "$karta" .md)" ] ||
+      blad "$wzgl: wymaganie='$(fm_get "$karta" wymaganie)', oczekiwano '$(basename "$karta" .md)'"
+    case "$(fm_get "$karta" rodzaj)" in
+      pelna) sekcje_karty=("${SEKCJE_KARTY_PELNEJ[@]}") ;;
+      skrocona) sekcje_karty=("${SEKCJE_KARTY_SKROCONEJ[@]}") ;;
+      *)
+        blad "$wzgl: rodzaj='$(fm_get "$karta" rodzaj)', dozwolone pelna albo skrocona"
+        sekcje_karty=("${SEKCJE_KARTY_SKROCONEJ[@]}")
+        ;;
+    esac
+    for sekcja in "${sekcje_karty[@]}"; do
+      grep -qxF "## $sekcja" "$karta" || blad "$wzgl: brak sekcji '$sekcja'"
+    done
+    awk '$0 == "## Kryteria akceptacji" { w = 1; next } w && /^## / { exit } w' "$karta" |
+      grep -qiE 'given.*when.*then' || blad "$wzgl: „Kryteria akceptacji” bez kryterium Given/When/Then"
+    while IFS= read -r luka; do
+      [ -n "$luka" ] && blad "$wzgl:$luka (otwarta luka: odpowiedź właściciela albo założenie)"
+    done < <(luki_karty "$karta")
+  done
+fi
+
 # Bez jq: pole "prepare" z husky w dowolnym package.json poza node_modules.
 while IFS= read -r sciezka; do
   wzgl="${sciezka#"$ROOT"/}"
