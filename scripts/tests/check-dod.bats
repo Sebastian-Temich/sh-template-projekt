@@ -117,19 +117,26 @@ zaznacz_wszystko() {
   [[ "$output" == *"docs/wydanie/DoD.md: status done, ale 1 pól"* ]] || false
 }
 
-@test "pominiety etap z trybu M bez uzasadnienia odrzucony" {
+@test "pominiety etap bez decyzji odrzucony" {
   status_etapu 08-qa pominiety
   run bash "$SKRYPT" "$ROOT"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"wymaga uzasadnienie_pominiecia"* ]] || false
+  [[ "$output" == *"status pominiety wymaga pola decyzja"* ]] || false
 }
 
-@test "pominiety etap z trybu M z uzasadnieniem dozwolony" {
+@test "pominiety etap z decyzja dozwolony" {
   status_etapu 08-qa pominiety
   zamien "$ROOT/docs/08-qa/DoD.md" 's/^status: pominiety$/status: pominiety\
-uzasadnienie_pominiecia: biblioteka bez UI, QA w testach jednostkowych/'
+decyzja: biblioteka bez UI, QA w testach jednostkowych/'
   run bash "$SKRYPT" "$ROOT"
   echo "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "tryb S: pominiety bez decyzji dozwolony" {
+  ustaw tryb_procesu S
+  status_etapu 08-qa pominiety
+  run bash "$SKRYPT" "$ROOT"
   [ "$status" -eq 0 ]
 }
 
@@ -204,8 +211,8 @@ uzasadnienie_pominiecia: biblioteka bez UI, QA w testach jednostkowych/'
   [ "$status" -eq 0 ]
 }
 
-@test "pominiety etap spoza trybu M dozwolony" {
-  status_etapu 01-brief pominiety
+@test "etapy trybu L i DoD realizacji nie sa wymagane" {
+  for e in 01-brief 02-design 03-wymagania 07-realizacja; do [ ! -e "$ROOT/docs/$e/DoD.md" ]; done
   run bash "$SKRYPT" "$ROOT"
   [ "$status" -eq 0 ]
 }

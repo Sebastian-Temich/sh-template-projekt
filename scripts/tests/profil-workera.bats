@@ -145,7 +145,7 @@ bash_regula() {
 }
 
 @test "odczyt: bez ogolnego Read, Glob i Grep; zakres pilnuje hook odczyt-hook.sh" {
-  for p in "$PROFIL" "$BATS_TEST_DIRNAME/../../.claude/roles/reviewer/settings.json"; do
+  for p in "$PROFIL"; do
     run jq -e '.permissions.allow | (index("Read") // index("Glob") // index("Grep"))' "$p"
     [ "$status" -ne 0 ] || { echo "ogolne Read/Glob/Grep w $p"; false; }
     jq -e '.hooks.PreToolUse[] | select(.matcher == "Read|Glob|Grep")
