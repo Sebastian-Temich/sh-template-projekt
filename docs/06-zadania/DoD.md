@@ -9,16 +9,19 @@ akceptacja_wlasciciela: false
 
 ## Dokumentacja
 
-- [ ] `index.md` jest zsynchronizowany z issue
+- [ ] `zadania.yaml` jest kompletny, a `index.md` zsynchronizowany z issue
 
 ## Funkcjonalność
 
-- [ ] Każde zadanie planu ma issue z celem i kryteriami akceptacji
+- [ ] Każdy kamień planu ma zadania z celem i kryteriami akceptacji
+- [ ] Kryteria każdego zadania z funkcją obejmują podpięcie do punktu wejścia lub routingu
+- [ ] Zadania są grube: jedna funkcja albo strona to jedno zadanie
+- [ ] Zadania z UI wskazują konkretne pliki designu
 - [ ] Kamienie milowe są założone jako GitHub Milestones
 
 ## Checklisty jakości
 
-- [ ] Zadania mają etykiety runnera, wykonawcy, typu i statusu
+- [ ] Zadania mają kategorię i stack (warstwy skilli workera)
 - [ ] Zadania z migracją mają `db:migracja`
 - [ ] Zadania mają rozłączne zakresy plików albo jawną zależność
 

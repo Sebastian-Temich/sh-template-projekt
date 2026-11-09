@@ -1,4 +1,5 @@
 ---
+wersja_procesu: 2
 etap_wdrozenia: A
 tryb_procesu: M
 auto_merge_S: false

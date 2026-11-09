@@ -1,4 +1,5 @@
 ---
+wersja_procesu: 2
 etap_wdrozenia: A
 tryb_procesu: M
 auto_merge_S: false
@@ -37,6 +38,7 @@ hosting:
 
 | Pole | Znaczenie |
 |---|---|
+| `wersja_procesu` | Wersja procesu SH. `2` (SH-lite F3a): etap `04-plan` zamiast `04-architektura` i `05-plan`. Brak pola to wersja 1 (projekty sprzed migracji); shctl obsługuje obie |
 | `etap_wdrozenia` | `A` albo `B`. Etap A: tylko tryby S i M, tylko `runner:local` i `wykonawca:claude` |
 | `tryb_procesu` | `S`, `M` albo `L` (L od etapu B). Nowy projekt zaczyna od M lub L. Proponuje `sh-intake`, akceptuje właściciel |
 | `auto_merge_S` | Czy orkiestrator merguje zlecenia S sam. Włączamy po kilku udanych zleceniach S |
