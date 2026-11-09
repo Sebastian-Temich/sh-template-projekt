@@ -253,11 +253,11 @@ jq -n \
         | $r[0:$k] | join(" ") | [scan("#([0-9]+)") | .[0] | tonumber] end;
   def czas($s): if $s == null or $s == "" then null else ($teraz - ($s | sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601)) end;
   def slownie($sek):
-    if $sek == null then "-"
+    if $sek == null or $sek < 0 then "-"
     else ($sek / 60 | floor) as $m
       | if $m < 60 then "\($m) min"
-        elif $m < 1440 then "\($m / 60 | floor) h \($m % 60) min"
-        else "\($m / 1440 | floor) d \(($m % 1440) / 60 | floor) h" end end;
+        elif $m < 1440 then "\($m / 60 | floor) h" + (if $m % 60 > 0 then " \($m % 60) min" else "" end)
+        else "\($m / 1440 | floor) d" + (if ($m % 1440) >= 60 then " \(($m % 1440) / 60 | floor) h" else "" end) end end;
   def komorka: tostring | gsub("\\|"; "\\|") | gsub("\n"; " ");
   def nazwa_etapu:
     {"00-intake": "Specyfikacja", "04-plan": "Plan", "04-architektura": "Architektura",
@@ -327,7 +327,7 @@ jq -n \
            wpisz: "\(.id): \((.opcje[0] // "TWOJA ODPOWIEDŹ") | split(" ")[0] | rtrimstr(":") | rtrimstr(")"))",
            opcje: .opcje} ]
      + [ $lista[] | {co: "Lista startowa: \(.)", od: $lista_od,
-           wpisz: "gotowe: \(. | split(",")[0] | split(" (")[0])", opcje: []} ]
+           wpisz: "gotowe: \(. | split(":")[0] | split(",")[0] | split(" (")[0])", opcje: []} ]
      + [ $et[] | select(.checkpoint and .status == "review" and (.zaakceptowany | not)) as $e
          | ($otw | map(select(.headRefName == "stage/\($e.etap)")) | max_by(.number)) as $p
          | select($p != null) | ($p | pass_dla_heada) as $od | select($od != null)

@@ -131,12 +131,12 @@ EOF
   [ "$(fm czeka_na_ciebie)" = 4 ]
   [ "$(fm eskalacje)" = 1 ]
   [ "$(fm pytania)" = 1 ]
-  grep -qF '1. E-001 (#2): brak klucza Stripe (czeka 5 h 0 min)' "$(P)"
+  grep -qF '1. E-001 (#2): brak klucza Stripe (czeka 5 h)' "$(P)"
   grep -qF 'Wpisz orkiestratorowi: `E-001: A`' "$(P)"
-  grep -qF 'E-002 (#3, pytanie): W-02: komunikat pustego katalogu (czeka 1 h 0 min)' "$(P)"
+  grep -qF 'E-002 (#3, pytanie): W-02: komunikat pustego katalogu (czeka 1 h)' "$(P)"
   grep -qF 'Lista startowa: Stripe: klucze testowe (W-03), JAK: Dashboard' "$(P)"
-  grep -qF 'Wpisz orkiestratorowi: `gotowe: Stripe: klucze testowe`' "$(P)"
-  grep -qF 'Odbiór zlecenia S #6 Eksport CSV (PR #12, review PASS) (czeka 6 h 0 min)' "$(P)"
+  grep -qF 'Wpisz orkiestratorowi: `gotowe: Stripe`' "$(P)"
+  grep -qF 'Odbiór zlecenia S #6 Eksport CSV (PR #12, review PASS) (czeka 6 h)' "$(P)"
   grep -qF 'Wpisz orkiestratorowi: `odbieram #6`' "$(P)"
   grep -qF -- '- **Następny krok:** Twoja odpowiedź: E-001 (#2): brak klucza Stripe' "$(P)"
   grep -qF '| E-002 | pytanie | #3 | W-02: komunikat pustego katalogu |' "$(P)"
@@ -157,7 +157,7 @@ EOF
   printf '[{"number":2,"headRefName":"stage/00-intake","headRefOid":"def","closingIssuesReferences":[],"comments":[{"body":"<!-- shctl:review head=def werdykt=PASS -->","createdAt":"2026-11-09T08:00:00Z"}]}]' >"$D/otwarte.json"
   run sync --dane "$D"
   [ "$status" -eq 0 ]
-  grep -qF 'Akceptacja: Specyfikacja (PR #2, review PASS) (czeka 4 h 0 min)' "$(P)"
+  grep -qF 'Akceptacja: Specyfikacja (PR #2, review PASS) (czeka 4 h)' "$(P)"
   grep -qF '`akceptuję specyfikacja PR #2`' "$(P)"
 }
 
