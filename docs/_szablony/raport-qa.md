@@ -17,7 +17,7 @@ Commit: SHA
 
 | Wymaganie | Wynik | Dowód |
 |---|---|---|
-| W-1 | | |
+| W-01 | | |
 
 ## Zgłoszenia
 

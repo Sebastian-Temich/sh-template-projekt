@@ -19,26 +19,28 @@ Poza zakresem:
 
 ## Wymagania
 
-Historyjki z priorytetem (musi, powinno, może) i kryteriami Given/When/Then.
+Historyjki z priorytetem (musi, powinno, może) i kryteriami Given/When/Then. Numeracja dwucyfrowa:
+W-01, W-02 … ta sama w kartach, zadaniach i kryteriach (`W-01/K1`).
 
-### W-1: TYTUŁ (musi)
+### W-01: TYTUŁ (musi)
 
 Jako ROLA chcę DZIAŁANIE, aby CEL.
 
 - Given STAN, when DZIAŁANIE, then WYNIK.
 
 Wymaganie bez funkcji użytkowej (np. wydajność, SEO) ma w nagłówku „(bez karty: powód)”, np.
-`### W-9: Wydajność (musi) (bez karty: wymaganie niefunkcjonalne)`.
+`### W-09: Wydajność (musi) (bez karty: wymaganie niefunkcjonalne)`.
 
 ## Karty funkcji
 
-Każda funkcja użytkowa ma kartę `docs/00-intake/funkcje/W-N.md` (wzór `docs/_szablony/karta-funkcji.md`):
-przebieg, stany ekranu, dane, reguły, przypadki brzegowe i kryteria `W-N/Kn`. Specyfikacja trzyma
-historyjki, karta szczegóły.
+Każda funkcja użytkowa ma kartę `docs/00-intake/funkcje/W-NN.md` (wzór `docs/_szablony/karta-funkcji.md`)
+z częścią „Dla właściciela” (opis, przebieg, stany ekranu z tekstami, reguły, do potwierdzenia) i „Dla
+wykonawcy” (pola i walidacja, kody odpowiedzi, dostępność, kryteria `W-NN/Kn`, design i ADR).
+Specyfikacja trzyma historyjki, karta szczegóły.
 
 | Wymaganie | Karta | Rodzaj (pelna, skrocona) | Ekrany z designu |
 |---|---|---|---|
-| W-1 | `funkcje/W-1.md` | | |
+| W-01 | `funkcje/W-01.md` | | |
 
 ## Lista startowa
 
@@ -90,10 +92,11 @@ Skąd pochodzi design, co jest ustalone i co właściciel dostarcza do `docs/00-
 
 Tryb i uzasadnienie w jednym zdaniu.
 
-## Założenia do potwierdzenia
+## Do potwierdzenia
 
-Założenia z kart („Założenia modelu”) i specyfikacji; checkpoint specyfikacji pokazuje je właścicielowi.
+Zbiorcza lista z sekcji „Do potwierdzenia” wszystkich kart i założeń specyfikacji. Checkpoint
+specyfikacji pokazuje właścicielowi części „Dla właściciela” kart i tę listę.
 
-| Nr | Karta | Założenie | Źródło (zdecyduj sam, luka bez pytania) |
-|---|---|---|---|
+| Nr | Karta | Pytanie albo założenie | Proponowana odpowiedź | Źródło (zdecyduj sam, luka bez pytania) |
+|---|---|---|---|---|
 

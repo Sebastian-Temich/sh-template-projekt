@@ -11,7 +11,7 @@ akceptacja_wlasciciela: true
 
 - [ ] `specyfikacja.md` ma cel i kontekst, użytkowników, zakres, wymagania, typ projektu, stack, hosting, notatkę o designie, ryzyka i szacunek poglądowy
 - [ ] `zrodlo.md` zawiera pierwotne zlecenie
-- [ ] Każda funkcja użytkowa ma kartę `funkcje/W-N.md` bez otwartych luk (`[?]`, `?`, TODO); `scripts/check-dod.sh` sprawdza sekcje
+- [ ] Każda funkcja użytkowa ma kartę `funkcje/W-NN.md` bez otwartych luk (`[?]`, `?`, TODO); `scripts/check-dod.sh` sprawdza sekcje
 - [ ] `lista-startowa.md` wymienia wszystko zewnętrzne od właściciela, z instrukcją przy każdej pozycji
 <!-- tylko-tryb:L -->
 - [ ] `intake.md` powstał
@@ -32,7 +32,8 @@ akceptacja_wlasciciela: true
 - [ ] Tryb procesu jest zapisany w `konfiguracja.md` z uzasadnieniem w jednym zdaniu
 - [ ] Obszary ryzyka są ocenione; każdy na `tak` albo `do ustalenia` ma w specyfikacji „ADR w 04-plan” (ADR pisze sh-plan, nie intake)
 - [ ] Kroki ręczne właściciela są wypisane
-- [ ] „Założenia do potwierdzenia” zbierają założenia z kart; każde jest w „Decyzjach do rejestru” PR
+- [ ] Karty mają części „Dla właściciela” (prosty język, bez kodów i atrybutów) i „Dla wykonawcy”; numeracja W-01, W-02 …
+- [ ] Zbiorcza lista „Do potwierdzenia” w specyfikacji zbiera wiersze z kart; każdy jest w „Decyzjach do rejestru” PR
 - [ ] Hosting jest zapisany w `konfiguracja.md`
 
 ## Checkpoint
