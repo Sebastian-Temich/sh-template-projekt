@@ -94,7 +94,14 @@ pętli, `$(...)`, heredoców, `cd` i przekierowań do pliku (szczegóły i przyk
   `supabase link|db push|secrets|functions deploy`; `git push --force|-f`, refspec z `+`, usuwanie
   gałęzi; `gh api` z `-X`/`--method` albo polami (`-f`, `-F`, `--field`, `--raw-field`, `--input`);
   `gh secret|variable|auth|alias|extension|workflow`, `gh repo delete|edit`, `gh pr merge|close`,
-  `gh issue close|edit|delete`; `git -c`, `git -C`, `git config`; `sudo`; `rm` poza worktree.
+  `gh issue close|edit|delete`, `gh gist`, `gh release upload`; `git -c`, `git -C`, `git config`,
+  `--no-index`, `--exec-path`; `sudo`; `rm` poza worktree; `~/Documents`, `~/Desktop`, `~/Downloads`
+  i iCloud (`~/Library/Mobile Documents`).
+- Sandbox: każde polecenie Bash poza `git`, `gh`, `shctl escalate` i `brew install` działa w sandboxie
+  Claude Code. Zapis tylko w worktree, `$TMPDIR` i cache narzędzi (`~/Library/pnpm`, `~/.npm`,
+  `~/.cache`, `~/Library/Caches`), sieć tylko do GitHuba, rejestru npm i pobierania Playwrighta.
+  Odmowa sandboxa (`EPERM`, `403` z proxy) to granica roli: nie obchodzisz jej, opisujesz w „Ryzykach”
+  albo eskalujesz, gdy blokuje kryterium.
 - Do czytania plików używaj narzędzi Read, Grep i Glob, do zmian Edit i Write, nie `sed`, `cat >`
   ani skryptów `python3 -`/`node -e`.
 

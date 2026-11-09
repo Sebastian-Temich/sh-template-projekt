@@ -100,7 +100,7 @@ bash_regula() {
   for c in "git push origin main" "git push -q origin HEAD:main" "git push origin task/1:refs/heads/main" \
     "git push origin HEAD:production" "git push origin production" "git push --force origin task/1" \
     "git push origin task/1 --force" "git push -f origin task/1" "git push origin +task/1" "git push origin +HEAD:task/1" \
-    "git push origin --delete task/1" "git push origin :task/1" "git push --mirror origin"; do
+    "git push origin --delete task/1" "git push origin :main" "git push --mirror origin"; do
     [ "$(bash_regula "$c")" = deny ] || { echo "nie zablokowane: $c ($(bash_regula "$c"))"; false; }
   done
 }
@@ -156,4 +156,31 @@ bash_regula() {
 @test "pliki .env: hook env-hook.sh na odczyt, edycje, wyszukiwanie i Bash (wyjatek .env.example)" {
   jq -e '.hooks.PreToolUse[] | select(.matcher == "Read|Edit|Write|MultiEdit|NotebookEdit|Glob|Grep|Bash")
     | .hooks[] | select(.command == "/Users/Shared/sh/bin/env-hook.sh || exit 2")' "$PROFIL" >/dev/null
+}
+
+@test "reguly bez koncowego :* (Claude Code czyta je doslownie i ignoruje)" {
+  [ "$(jq -r '[.permissions.allow[], .permissions.deny[]] | map(select(endswith(":*)"))) | length' "$PROFIL")" -eq 0 ]
+}
+
+@test "katalogi domowe poza zasiegiem: Documents, Desktop, Downloads, iCloud" {
+  for k in "~/Documents/**" "~/Desktop/**" "~/Downloads/**" "~/Library/Mobile Documents/**"; do
+    for n in Read Edit; do
+      jq -e --arg r "$n($k)" '.permissions.deny | index($r)' "$PROFIL" >/dev/null || { echo "brak deny $n($k)"; false; }
+    done
+  done
+  for c in "gh gist create plik" "gh release upload v1 plik" "git diff --no-index a b" "git --exec-path=/tmp/x status"; do
+    [ "$(bash_regula "$c")" = deny ] || { echo "nie zablokowane: $c"; false; }
+  done
+}
+
+@test "sandbox: wlaczony bez wyjscia poza sandbox; git, gh i shctl escalate poza nim; siec z listy" {
+  jq -e '.sandbox.enabled == true and .sandbox.allowUnsandboxedCommands == false' "$PROFIL" >/dev/null
+  for c in "git *" "gh *" "shctl escalate *"; do
+    jq -e --arg c "$c" '.sandbox.excludedCommands | index($c)' "$PROFIL" >/dev/null || { echo "brak excluded $c"; false; }
+  done
+  for d in github.com api.github.com registry.npmjs.org; do
+    jq -e --arg d "$d" '.sandbox.network.allowedDomains | index($d)' "$PROFIL" >/dev/null || { echo "brak domeny $d"; false; }
+  done
+  # Interpretery (node, npx, pnpm) zostają w sandboxie: to one omijały reguły Read (test 2026-11-09).
+  [ "$(jq -r '[.sandbox.excludedCommands[] | select(test("^(node|npx|pnpm|npm|python|uv|bash|cat) "))] | length' "$PROFIL")" -eq 0 ]
 }
