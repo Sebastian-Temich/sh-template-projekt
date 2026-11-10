@@ -121,7 +121,7 @@ CI="$(gh run list --workflow ci.yml --commit "$COMMIT" --limit 1 --json conclusi
 [ "$CI" = "success" ] || blad "CI na $COMMIT nie jest zielone (wynik: '${CI:-brak}')"
 echo "Warunki spełnione: $TAG, commit $COMMIT, CI zielone, cel: $CEL."
 
-TMP="$(mktemp -d)"
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/deploy-prod.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
 git archive "$COMMIT" | tar -x -C "$TMP"
 cd "$TMP"
