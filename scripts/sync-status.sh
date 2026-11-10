@@ -404,7 +404,7 @@ jq -n \
       postep_etapy: $postep_etapy, postep_zadan: $postep_zadan,
       czeka: $czeka, w_toku: $w_toku, gotowe: $gotowe, zaplanowane: $zaplanowane,
       zrobione: ($zrobione_b | ostatnio),
-      zrobione_wczesniej: ([$z[] | select(.status == "done")] | length) - ($zrobione_b | length),
+      zrobione_wczesniej: (([$z[] | select(.status == "done")] | length) - ($zrobione_b | length)),
       anulowane: [$biezace[] | select(.status == "anulowane")],
       wszystkie_zrobione: ([$z[] | select(.status == "done")] | ostatnio),
       wszystkie_anulowane: [$z[] | select(.status == "anulowane")],
