@@ -8,7 +8,7 @@ mówi `README.md`, a o bieżącym stanie `docs/Projekt.md`.
 
 - Właściciel zleca pracę zwykłym językiem. Orkiestrator (Claude Code na serwerze) prowadzi etapy:
   specyfikacja z kartami funkcji (`docs/00-intake/`), plan (`docs/04-plan/`), zadania jako issue,
-  realizacja (worker w osobnym worktree, PR „Closes #NR”), review innym modelem (Codex), QA po
+  realizacja (worker w osobnym worktree, PR „Closes #NR”), review w świeżej sesji bez kontekstu workera (Claude albo Codex, zależnie od ryzyka PR), QA po
   kamieniu milowym (`docs/08-qa/`), odbiór.
 - Stan projektu dla ludzi: `docs/Projekt.md` (generuje `scripts/sync-status.sh` przy każdej zmianie
   stanu: gdzie jesteśmy, co czeka na właściciela, zadania bieżącego zlecenia, eskalacje, dokumenty).
@@ -159,6 +159,7 @@ W projekcie ten workflow jest pominięty, a `ci.yml` nie ma joba `testy-skryptow
 | `scripts/sync-status.sh` | Stan issue, PR i CI do `06-zadania/index.md`, `docs/Projekt.md` (widok projektu dla właściciela) i `docs/historia.md` (lista zadań), wstrzymania z `/Users/Shared/sh/limity.md` |
 | `scripts/deploy-prod.sh` | Wdrożenie produkcyjne, tylko dla właściciela; testy w `scripts/tests/` |
 | `.claude/roles/worker/` | Profil uprawnień workera, uruchamiany przez `claude --settings` |
+| `.claude/roles/reviewer/` | Profil reviewera Claude (tylko odczyt, bez sieci); `shctl review run` bierze go z `main` |
 | `.github/` | Szablony issue i PR, CI, migracje staging, zablokowany workflow deploy produkcyjny |
 
 ## Tryby w DoD

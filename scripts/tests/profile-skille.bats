@@ -14,3 +14,5 @@ sprawdz() {
 }
 
 @test "profil workera ukrywa i blokuje stare skille" { sprawdz worker; }
+
+@test "profil reviewera ukrywa i blokuje stare skille" { sprawdz reviewer; }

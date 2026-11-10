@@ -386,7 +386,7 @@ jq -n \
     ) as $czeka
   | (if ($czeka | length) > 0 then "Twoja odpowiedź: \($czeka[0].co)"
      elif $etap.klucz == "zakonczony" then "Brak, zlecenie zakończone"
-     elif ($etap.status // "") == "review" then "Review etapu \($etap.opis | ascii_downcase) (Codex), potem Twoja akceptacja"
+     elif ($etap.status // "") == "review" then "Review etapu \($etap.opis | ascii_downcase), potem Twoja akceptacja"
      elif ($etap.status // "") == "in-progress" then "Agent przygotowuje etap \($etap.opis | ascii_downcase)"
      elif ($etap.status // "") == "escalated" then "Etap \($etap.opis | ascii_downcase) czeka na rozstrzygnięcie eskalacji"
      elif ($etap.status // "") == "todo" then "Start etapu \($etap.opis | ascii_downcase)"

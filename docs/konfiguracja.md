@@ -25,10 +25,11 @@ modele:
   worker: opus
   qa: opus
   status: opus
-  reviewer:
-    narzedzie: codex
-    model: GPT-6-Astra
-    rozumowanie: high
+# Review PR i etapów: wartości wspólne są w /Users/Shared/sh/konfiguracja.md (review). Tu tylko
+# nadpisanie dla projektu, pole po polu, np.:
+# review:
+#   zwykle: {silnik: codex, model: gpt-6-luna, effort: medium}
+#   gdy_limit: drugi_silnik
 hosting:
   aplikacja: vercel
   baza: supabase-cloud
@@ -55,5 +56,6 @@ hosting:
 | `playwright_version` | Przypięta wersja, ostatnia z działającym WebKit na macOS 14 Intel |
 | `playwright_workers` | Liczba workerów Playwright |
 | `staging_url` | Adres stagingu; job `qa-staging` w CI uruchamia na nim e2e (`BASE_URL`) i Lighthouse dla PR z `stage/08-qa` |
-| `modele` | Model per rola. `opus` to najmocniejszy dostępny Opus. Model reviewera wybiera właściciel; `domyslny` oznacza model z konfiguracji Codex. Decyzja właściciela z 2026-11-02: role Claude na `opus` (Opus 5.5), reviewer Codex na GPT-6-Astra (najmocniejszy model Codexa) z rozumowaniem `high` |
+| `modele` | Model per rola Claude. `opus` to najmocniejszy dostępny Opus. Decyzja właściciela z 2026-11-02: role Claude na `opus` (Opus 5.5). Reviewer nie jest tu wpisany: patrz `review` |
+| `review` | Opcjonalne nadpisanie silnika review dla projektu (`zwykle`, `ryzyko`: `silnik` `claude` albo `codex`, `model`, `effort`; `gdy_limit`: `czekaj` albo `drugi_silnik`). Bez wpisu obowiązuje `/Users/Shared/sh/konfiguracja.md`. Stare `modele.reviewer` shctl pomija (SH-lite F6) |
 | `hosting` | Proponuje intake, akceptuje właściciel (`zaakceptowany: true`). Domyślnie Vercel + Supabase Cloud (UE) na kontach klienta |

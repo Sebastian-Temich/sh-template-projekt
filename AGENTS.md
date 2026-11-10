@@ -109,6 +109,14 @@ pętli, `$(...)`, heredoców, `cd` i przekierowań do pliku (szczegóły i przyk
 - Do czytania plików używaj narzędzi Read, Grep i Glob, do zmian Edit i Write, nie `sed`, `cat >`
   ani skryptów `python3 -`/`node -e`.
 
+## Profil reviewera
+
+`shctl review run` uruchamia reviewera Claude w świeżej sesji (`claude -p`) z
+`.claude/roles/reviewer/settings.json` wziętym z `main`, nie z gałęzi PR. Profil jest tylko do odczytu:
+bez Edit i Write, Bash tylko `git diff|log|show|status|ls-files|grep|merge-base|rev-parse`, `ls`,
+`wc`, sandbox bez sieci, te same hooki odczytu i `.env*` co u workera. Zmiana profilu to zmiana
+uprawnień: tylko przez PR szablonu z akceptacją właściciela.
+
 ## Raport zadania
 
 Każde zadanie kończy się raportem `docs/07-realizacja/T-NR.md`, szablon:
