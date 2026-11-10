@@ -57,6 +57,14 @@ bash_regula() {
   done
 }
 
+@test "git zmieniajacy stan i siec jawnie w deny" {
+  for c in "git push" "git push origin HEAD:main" "git commit -m x" "git add ." "git reset --hard" "git checkout -b x" \
+    "git switch main" "git restore a" "git merge x" "git rebase main" "git fetch origin" "git pull" "git worktree add x" \
+    "git stash" "git tag v1" "git branch -D x"; do
+    [ "$(bash_regula "$c")" = deny ] || { echo "nie zablokowane: $c ($(bash_regula "$c"))"; false; }
+  done
+}
+
 @test "hooki odczytu i plikow env jak u workera" {
   jq -e '.hooks.PreToolUse[] | select(.matcher == "Read|Glob|Grep")
     | .hooks[] | select(.command == "/Users/Shared/sh/bin/odczyt-hook.sh || exit 2")' "$PROFIL" >/dev/null
