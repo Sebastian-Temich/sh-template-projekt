@@ -1,18 +1,24 @@
 #!/usr/bin/env bash
-# Generuje widok projektu dla właściciela i plik zadań z GitHuba i plików repo:
-#   docs/Projekt.md           frontmatter (liczniki, etap, postęp, czeka) i blok między znacznikami
-#                             projekt:start/end: Gdzie jesteśmy, Czeka na Ciebie, Zadania, Eskalacje i
-#                             pytania, Dokumenty. Sekcje pod blokiem („Punkt przekazania”, „Dziennik
-#                             etapów”) zostają bez zmian.
+# Generuje widok projektu dla właściciela, historię i plik zadań z GitHuba i plików repo:
+#   docs/Projekt.md           cały plik: krótki frontmatter (dla SH/Wszystkie projekty.md), Gdzie
+#                             jesteśmy, Czeka na Ciebie, Zadania bieżącego zlecenia, Eskalacje i
+#                             pytania, Dokumenty.
+#   docs/historia.md          „Punkt przekazania” i „Dziennik etapów” (piszą orkiestrator i shctl) oraz
+#                             blok historia:start/end z pełną listą zadań wszystkich zleceń.
 #   docs/06-zadania/index.md  tabela między znacznikami sync-status
-# Czysty Markdown, bez Dataview. Projekt ze starym docs/status.md: Projekt.md przejmuje jego sekcje
-# „Punkt przekazania” i „Dziennik etapów”, a status.md znika (commit robi orkiestrator).
+# Czysty Markdown, bez Dataview. Stary projekt: „Punkt przekazania” i „Dziennik etapów” z Projekt.md
+# albo docs/status.md przechodzą do historia.md, a status.md znika (commit robi orkiestrator).
+# Lista „Czeka na Ciebie” z czasem, od którego czeka, trafia do SH_DIR/stan/czeka/NAZWA.json
+# (przypomnienia ntfy, shctl status show), nie do repo.
+# Bieżące zlecenie: zadania od zlecenie_od z docs/konfiguracja.md albo od ostatniego „Przebieg
+# dryrun” w docs/metryki.md; bez przebiegu ostatnia seria zadań tryb:S po zamkniętych zadaniach
+# trybu M to osobne zlecenie S. Otwarte zadania należą do bieżącego zlecenia zawsze.
 # Wywołuje go shctl po każdej zmianie stanu (orkiestrator, na main). Nic nie commituje.
 # Użycie: scripts/sync-status.sh [--dry-run] [--repo WLASCICIEL/NAZWA] [--nazwa PROJEKT]
 #           [--dane KATALOG] [--wyjscie KATALOG]
 #   --dane     issues.json, prs.json i otwarte.json zamiast gh (testy, podgląd)
-#   --wyjscie  zapis Projekt.md i index.md do KATALOGU zamiast docs/ (podgląd)
-# Czas: SH_TERAZ (epoka, testy). Dane serwera: SH_DIR (stan/NAZWA.json, konfiguracja.md, limity.md).
+#   --wyjscie  zapis Projekt.md, historia.md, index.md i czeka.json do KATALOGU zamiast docs/ (podgląd)
+# Czas: SH_TERAZ (epoka, testy). Dane serwera: SH_DIR (stan/, konfiguracja.md, limity.md).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -20,8 +26,9 @@ SH_DIR="${SH_DIR:-/Users/Shared/sh}"
 LIMITY="$SH_DIR/limity.md"
 START='<!-- sync-status:start -->'
 KONIEC='<!-- sync-status:end -->'
-P_START='<!-- projekt:start -->'
-P_KONIEC='<!-- projekt:end -->'
+H_START='<!-- historia:start -->'
+H_KONIEC='<!-- historia:end -->'
+OSTATNICH=10
 
 DRY=0
 DANE=""
@@ -49,6 +56,7 @@ done
 DOCS="$ROOT/docs"
 INDEKS="$DOCS/06-zadania/index.md"
 PROJEKT_MD="$DOCS/Projekt.md"
+HISTORIA="$DOCS/historia.md"
 STARY="$DOCS/status.md"
 KONFIG="$DOCS/konfiguracja.md"
 if [ -z "$NAZWA" ]; then
@@ -86,11 +94,12 @@ fm_get() {
     }' "$1" 2>/dev/null || true
 }
 
-# Treść sekcji „## NAZWA” (do następnego nagłówka drugiego poziomu albo znacznika bloku).
+# Treść sekcji „## NAZWA” (do następnego nagłówka drugiego poziomu albo znacznika bloku), bez pustych
+# linii na brzegach.
 sekcja() {
-  awk -v n="## $2" -v z="$P_START" '
+  awk -v n="## $2" '
     $0 == n { w = 1; next }
-    w && (/^## / || $0 == z) { exit }
+    w && (/^## / || /^<!-- [a-z-]+:(start|end) -->$/) { exit }
     w { print }' "$1" 2>/dev/null | sed '/./,$!d' | awk 'NF { for (; p > 0; p--) print ""; print; next } { p++ }'
 }
 
@@ -132,6 +141,22 @@ esac
 MAX_LOCAL="$(fm_get "$KONFIG" max_local)"
 [ -n "$MAX_LOCAL" ] || MAX_LOCAL="$(fm_get "$SH_DIR/konfiguracja.md" max_local)"
 case "$MAX_LOCAL" in "" | *[!0-9]*) MAX_LOCAL=2 ;; esac
+
+# Początek bieżącego zlecenia (ISO UTC): zlecenie_od z konfiguracji albo ostatni przebieg dryrun
+# z metryk („## Przebieg dryrun N… (RRRR-MM-DD)” i „Reset do baseline … o GG:MM UTC”).
+ZLECENIE_OD="$(fm_get "$KONFIG" zlecenie_od)"
+PRZEBIEG_OD=""
+if [ -f "$DOCS/metryki.md" ]; then
+  PRZEBIEG_OD="$(awk '
+    /^## Przebieg dryrun [0-9]/ {
+      d = ""; g = "00:00"; s = 1
+      if (match($0, /\([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\)/)) d = substr($0, RSTART + 1, 10)
+      next
+    }
+    /^## / { s = 0 }
+    s && match($0, / o [0-9][0-9]:[0-9][0-9] UTC/) { g = substr($0, RSTART + 3, 5); s = 0 }
+    END { if (d != "") print d "T" g ":00Z" }' "$DOCS/metryki.md")"
+fi
 
 : >"$TMP/etapy.jsonl"
 for e in $ETAPY; do
@@ -225,6 +250,7 @@ jq -n \
   --slurpfile dok "$TMP/dokumenty.json" --slurpfile wstrz "$TMP/wstrzymania.json" \
   --rawfile lista "$TMP/lista.txt" --arg lista_od "$LISTA_OD" \
   --arg nazwa "$NAZWA" --arg tryb "${TRYB:-M}" --arg odbior "$ODBIOR_S" \
+  --arg zlecenie_od "$ZLECENIE_OD" --arg przebieg_od "$PRZEBIEG_OD" \
   --argjson srednia "$SREDNIA" --argjson rownolegle "$MAX_LOCAL" --argjson stan "$STAN_ZADAN" \
   --argjson teraz "$TERAZ" '
   def etykiety: [.labels[]? | if type == "object" then .name else . end];
@@ -251,14 +277,15 @@ jq -n \
       else ($l[($i + 1):]) as $r
         | ([range(0; $r | length) | select($r[.] | test("^#{2,3} "))][0] // ($r | length)) as $k
         | $r[0:$k] | join(" ") | [scan("#([0-9]+)") | .[0] | tonumber] end;
-  def czas($s): if $s == null or $s == "" then null else ($teraz - ($s | sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601)) end;
+  def iso: if . == null or . == "" then "" else sub("\\.[0-9]+Z$"; "Z") end;
+  def czas($s): if $s == null or $s == "" then null else ($teraz - ($s | iso | fromdateiso8601)) end;
   def slownie($sek):
     if $sek == null or $sek < 0 then "-"
     else ($sek / 60 | floor) as $m
       | if $m < 60 then "\($m) min"
         elif $m < 1440 then "\($m / 60 | floor) h" + (if $m % 60 > 0 then " \($m % 60) min" else "" end)
         else "\($m / 1440 | floor) d" + (if ($m % 1440) >= 60 then " \(($m % 1440) / 60 | floor) h" else "" end) end end;
-  def komorka: tostring | gsub("\\|"; "\\|") | gsub("\n"; " ");
+  def ostatnio: sort_by(.zamkniete, .nr) | reverse;
   def nazwa_etapu:
     {"00-intake": "Specyfikacja", "04-plan": "Plan", "04-architektura": "Architektura",
      "05-plan": "Plan", "06-zadania": "Rozpisanie zadań", "08-qa": "QA", "wydanie": "Odbiór i wydanie"}[.] // .;
@@ -289,22 +316,39 @@ jq -n \
           typ: ([._et[] | select(startswith("typ:")) | ltrimstr("typ:")][0] // ""),
           zal: zaleznosci,
           start: ($stan[($nr | tostring)].start // null),
-          zamkniete: .closedAt
+          utworzone: (.createdAt | iso),
+          zamkniete: (.closedAt | iso)
         }) | sort_by(.nr)) as $z
+  # Bieżące zlecenie: od zlecenie_od albo przebiegu dryrun; bez przebiegu ostatnia seria tryb:S po
+  # zamkniętych zadaniach trybu M. Otwarte zadania zawsze.
+  | ([$zlecenie_od, $przebieg_od] | map(iso) | max) as $od
+  | ($z | map(select($od == "" or .utworzone == "" or .utworzone >= $od))) as $okres
+  | (if $przebieg_od != "" then $okres
+     else ([$okres[] | select(.s | not) | .nr] | max) as $ost_m
+       | ([$okres[] | select(.s and ($ost_m == null or .nr > $ost_m))]) as $seria_s
+       | ([$okres[] | select((.s | not) and (.status | IN("done", "anulowane") | not))] | length) as $otwarte_m
+       | if $ost_m != null and $otwarte_m == 0 and ($seria_s | length) > 0 then $seria_s else $okres end end) as $zakres
+  | ([$zakres[].nr]) as $nr_zakres
+  | ($z | map(select((.nr as $n | $nr_zakres | index($n)) != null or (.status | IN("done", "anulowane") | not)))) as $biezace
+  | ($biezace | map(select(.status != "anulowane"))) as $biezace_bez_anul
+  | ($biezace | map(select(.status == "done"))) as $zrobione_b
   | ($z | map(select(.status == "todo") | . as $t
       | . + {czeka_na: [.zal[] | select(($mapa[tostring] // null) as $i
           | $i == null or ($i.state == "OPEN") or ($i.stateReason == "NOT_PLANNED"))]})) as $todo
-  | ($etapy[0]) as $et
+  # Etapy: etap przygotowania w todo przy zadaniach zlecenia jest pominięty (np. przebieg dryrun
+  # z zadaniami z zadania.yaml), tak jak status pominiety.
+  | (($biezace_bez_anul | length) > 0) as $sa_zadania
+  | ($etapy[0] | map(. + {pominiety: (.status == "pominiety"
+      or ($sa_zadania and .status == "todo" and (.etap | IN("08-qa", "wydanie") | not)))})) as $et
+  | ([$et[] | select(.pominiety | not)]) as $et_akt
   | ($esk[0] | map(select(.status == "otwarta"))) as $otwarte_esk
   | ($lista | split("\n") | map(select(length > 0))) as $lista
-  | ($z | map(select(.status != "anulowane")) | length) as $wszystkie
-  | ($z | map(select(.status == "done")) | length) as $zrobione
   | ($z | map(select(.status | IN("in-progress", "review", "escalated", "blocked")))) as $w_toku
   | ($todo | map(select(.czeka_na | length == 0))) as $gotowe
   | ($todo | map(select(.czeka_na | length > 0))) as $zaplanowane
-  | ([$et[] | select(.etap != "08-qa" and .etap != "wydanie")]) as $przyg
-  | ([$przyg[] | select(.status | IN("done", "pominiety") | not)][0]) as $etap_przyg
-  | ([$et[] | select(.etap == "wydanie")][0]) as $wydanie
+  | ([$et_akt[] | select(.etap != "08-qa" and .etap != "wydanie")]) as $przyg
+  | ([$przyg[] | select(.status != "done")][0]) as $etap_przyg
+  | ([$et_akt[] | select(.etap == "wydanie")][0]) as $wydanie
   | ([$z[] | select(.status | IN("done", "anulowane") | not)]) as $otwarte_z
   | (if $tryb == "S" then
         (if ($otwarte_z | length) > 0 then {klucz: "realizacja", opis: "Zlecenie S w realizacji"}
@@ -314,12 +358,12 @@ jq -n \
      elif ($otwarte_z | length) > 0 then
         ([$otwarte_z[] | select(.kamien != "-") | .kamien] | sort | first) as $k
         | {klucz: "realizacja", opis: ("Realizacja" + (if $k then ", kamień \($k)" else "" end))}
-     elif $wydanie != null and ($wydanie.status | IN("done", "pominiety") | not) then
+     elif $wydanie != null and $wydanie.status != "done" then
         {klucz: "wydanie", opis: "Odbiór i wydanie", status: $wydanie.status}
      else {klucz: "zakonczony", opis: "Zakończony"} end) as $etap
-  | ([$et[] | select(.status | IN("done", "pominiety"))] | length) as $etapy_zrobione
-  | (if $wszystkie > 0 and ($etap_przyg == null or $tryb == "S") then {x: $zrobione, y: $wszystkie, co: "zadań"}
-     else {x: $etapy_zrobione, y: ($et | length), co: "etapów"} end) as $postep
+  | (if $tryb == "S" or ($et_akt | length) == 0 then null
+     else {x: ([$et_akt[] | select(.status == "done")] | length), y: ($et_akt | length)} end) as $postep_etapy
+  | {x: ($zrobione_b | length), y: ($biezace_bez_anul | length)} as $postep_zadan
   # Czeka na Ciebie: pozycje z czasem, od którego czekają, i tekstem do wpisania.
   | ([ $otwarte_esk[]
         | {co: "\(.id) (\(.dotyczy)\(if .typ == "pytanie" then ", pytanie" else "" end)): \(.powod)",
@@ -351,27 +395,21 @@ jq -n \
      elif $etap.klucz == "wydanie" then "Odbiór: scenariusze odbioru i Twoja akceptacja"
      else "Orkiestrator ustala następny krok" end) as $nastepny
   | (($w_toku | length) + ($todo | length)) as $pozostale
-  | (if $wszystkie == 0 or $pozostale == 0 then null
+  | (if $pozostale == 0 then null
      elif $srednia == 0 then "brak danych (pierwsze zadania)"
      else ((($pozostale + $rownolegle - 1) / $rownolegle | floor) * $srednia) as $m
        | "ok. \(slownie($m * 60)) pracy agentów (\($pozostale) zadań, średnio \(slownie($srednia * 60)) na zadanie, \($rownolegle) równolegle; orientacyjnie)" end) as $szac
   | {
-      nazwa: $nazwa, tryb: $tryb, etap: $etap, postep: $postep, nastepny: $nastepny, szacunek: $szac,
+      nazwa: $nazwa, tryb: $tryb, etap: $etap, przebieg: ($przebieg_od != ""), nastepny: $nastepny, szacunek: $szac,
+      postep_etapy: $postep_etapy, postep_zadan: $postep_zadan,
       czeka: $czeka, w_toku: $w_toku, gotowe: $gotowe, zaplanowane: $zaplanowane,
-      zrobione: [$z[] | select(.status == "done")], anulowane: [$z[] | select(.status == "anulowane")],
+      zrobione: ($zrobione_b | ostatnio),
+      zrobione_wczesniej: ([$z[] | select(.status == "done")] | length) - ($zrobione_b | length),
+      anulowane: [$biezace[] | select(.status == "anulowane")],
+      wszystkie_zrobione: ([$z[] | select(.status == "done")] | ostatnio),
+      wszystkie_anulowane: [$z[] | select(.status == "anulowane")],
       eskalacje: $otwarte_esk, eskalacje_zamkniete: ($esk[0] | map(select(.status != "otwarta")) | length),
-      dokumenty: $dok[0], wstrzymania: $wstrz[0], lista_braki: ($lista | length),
-      liczniki: {
-        zadania_todo: ($z | map(select(.status == "todo")) | length),
-        zadania_in_progress: ($z | map(select(.status == "in-progress")) | length),
-        zadania_review: ($z | map(select(.status == "review")) | length),
-        zadania_blocked: ($z | map(select(.status == "blocked")) | length),
-        zadania_escalated: ($z | map(select(.status == "escalated")) | length),
-        zadania_done: $zrobione,
-        zadania_anulowane: ($z | map(select(.status == "anulowane")) | length),
-        pr_otwarte: ($prs | map(select(.state == "OPEN")) | length),
-        ci_fail: ($z | map(select(.ci == "fail" and .pr_stan == "open")) | length)
-      },
+      dokumenty: $dok[0], wstrzymania: $wstrz[0],
       tabela: $z
     }
   | .w_toku |= map(. + {od_slownie: slownie(czas(.start))})
@@ -398,17 +436,19 @@ awk -v start="$START" -v koniec="$KONIEC" -v tabela="$TMP/tabela.md" '
   $0 == koniec { pomin = 0; next }
   !pomin { print }' "$INDEKS" >"$TMP/index.md"
 
-# --- Projekt.md ---------------------------------------------------------------------------------
+# --- Projekt.md (treść) -------------------------------------------------------------------------
 
-jq -r '
+jq -r --argjson ile "$OSTATNICH" '
   def komorka: tostring | gsub("\\|"; "\\|") | gsub("\n"; " ");
   def stan_slownie:
     {"in-progress": "worker", "review": "review", "escalated": "eskalacja", "blocked": "zablokowane"}[.] // .;
   def link($p): "[\($p | split("/") | last | rtrimstr(".md"))](\($p))";
-  "## Gdzie jesteśmy",
+  def pr: if .pr then "#\(.pr)" else "-" end;
+  (if .przebieg then {w: "przebiegu", wcz: "Wcześniejsze przebiegi"} else {w: "zleceniu", wcz: "Wcześniejsze zlecenia"} end) as $j
+  | "## Gdzie jesteśmy",
   "",
   "- **Etap:** \(.etap.opis)",
-  "- **Postęp:** \(.postep.x) z \(.postep.y) \(.postep.co)" + (if .postep.y > 0 then " (\(.postep.x * 100 / .postep.y | floor)%)" else "" end),
+  "- **Postęp:** Etapy \(if .postep_etapy then "\(.postep_etapy.x)/\(.postep_etapy.y)" else "–" end) · Zadania \(.postep_zadan.x)/\(.postep_zadan.y)",
   "- **Co się dzieje:** " + (if (.w_toku | length) > 0
       then ([.w_toku[] | "#\(.nr) \(.tytul) (\(.status | stan_slownie)\(if .iter > 1 then ", iteracja \(.iter)" else "" end)\(if .od_slownie != "-" then ", od \(.od_slownie)" else "" end))"] | join("; "))
       elif (.etap.status // "") != "" then "etap \(.etap.opis | ascii_downcase) \({"todo": "jeszcze nie rozpoczęty", "in-progress": "w przygotowaniu", "review": "w review", "escalated": "wstrzymany eskalacją"}[.etap.status] // .etap.status)"
@@ -419,41 +459,44 @@ jq -r '
   "",
   "## Czeka na Ciebie",
   "",
-  (if (.czeka | length) == 0 then "Nic. Agenci pracują sami."
-   else (.czeka | to_entries[] | .value as $c
-     | "\(.key + 1). \($c.co)" + (if $c.od_slownie != "-" then " (czeka \($c.od_slownie))" else "" end)
-       + "  \n   Wpisz orkiestratorowi: `\($c.wpisz)`"
-       + (if ($c.opcje | length) > 0 then "  \n   " + ($c.opcje | join("; ")) else "" end)) end),
+  (if (.czeka | length) > 0 then
+     (.czeka | to_entries[] | .value as $c
+       | "\(.key + 1). \($c.co)" + (if $c.od_slownie != "-" then " (czeka \($c.od_slownie))" else "" end)
+         + "  \n   Wpisz orkiestratorowi: `\($c.wpisz)`"
+         + (if ($c.opcje | length) > 0 then "  \n   " + ($c.opcje | join("; ")) else "" end))
+   elif .etap.klucz == "zakonczony" then "Nic. Projekt zakończony."
+   else "Nic. Agenci pracują sami." end),
   "",
   "## Zadania",
   "",
-  "### W realizacji (\(.w_toku | length))",
-  "",
-  (if (.w_toku | length) == 0 then "Brak." else
+  (if (.w_toku | length) + (.gotowe | length) + (.zaplanowane | length) == 0 then "Nic w toku.", "" else empty end),
+  (if (.w_toku | length) > 0 then
+    "### W realizacji (\(.w_toku | length))", "",
     "| Zadanie | Kamień | Kto | Iteracja | PR | CI | Od |", "|---|---|---|---|---|---|---|",
-    (.w_toku[] | "| #\(.nr) \(.tytul | komorka) | \(.kamien) | \(.status | stan_slownie) | \(.iter) | \(if .pr then "#\(.pr)" else "-" end) | \(.ci) | \(.od_slownie) |") end),
-  "",
-  "### Gotowe do startu (\(.gotowe | length))",
-  "",
-  (if (.gotowe | length) == 0 then "Brak." else
+    (.w_toku[] | "| #\(.nr) \(.tytul | komorka) | \(.kamien) | \(.status | stan_slownie) | \(.iter) | \(pr) | \(.ci) | \(.od_slownie) |"), ""
+   else empty end),
+  (if (.gotowe | length) > 0 then
+    "### Gotowe do startu (\(.gotowe | length))", "",
     "| Zadanie | Kamień | Zależności |", "|---|---|---|",
-    (.gotowe[] | "| #\(.nr) \(.tytul | komorka) | \(.kamien) | \(if (.zal | length) > 0 then ([.zal[] | "#\(.) ✓"] | join(", ")) else "brak" end) |") end),
-  "",
-  "### Zaplanowane (\(.zaplanowane | length))",
-  "",
-  (if (.zaplanowane | length) == 0 then "Brak." else
+    (.gotowe[] | "| #\(.nr) \(.tytul | komorka) | \(.kamien) | \(if (.zal | length) > 0 then ([.zal[] | "#\(.) ✓"] | join(", ")) else "brak" end) |"), ""
+   else empty end),
+  (if (.zaplanowane | length) > 0 then
+    "### Zaplanowane (\(.zaplanowane | length))", "",
     "| Zadanie | Kamień | Czeka na |", "|---|---|---|",
-    (.zaplanowane[] | "| #\(.nr) \(.tytul | komorka) | \(.kamien) | \([.czeka_na[] | "#\(.)"] | join(", ")) |") end),
+    (.zaplanowane[] | "| #\(.nr) \(.tytul | komorka) | \(.kamien) | \([.czeka_na[] | "#\(.)"] | join(", ")) |"), ""
+   else empty end),
+  "### Zrobione w bieżącym \($j.w) (\(.zrobione | length))",
   "",
-  "### Zrobione (\(.zrobione | length))",
-  "",
-  (if (.zrobione | length) == 0 then "Brak." else
+  (if (.zrobione | length) == 0 then "Jeszcze nic." else
     "| Zadanie | Kamień | PR |", "|---|---|---|",
-    (.zrobione[] | "| #\(.nr) \(.tytul | komorka) | \(.kamien) | \(if .pr then "#\(.pr)" else "-" end) |") end),
-  "",
-  "### Anulowane (\(.anulowane | length))",
-  "",
-  (if (.anulowane | length) == 0 then "Brak." else (.anulowane[] | "- #\(.nr) \(.tytul)") end),
+    (.zrobione[0:$ile][] | "| #\(.nr) \(.tytul | komorka) | \(.kamien) | \(pr) |") end),
+  (if (.zrobione | length) > $ile then "", "Ostatnie \($ile) z \(.zrobione | length). Pełna lista: [Historia](historia.md)."
+   elif .zrobione_wczesniej > 0 then "", "\($j.wcz) (\(.zrobione_wczesniej) zadań): [Historia](historia.md)."
+   else empty end),
+  (if (.anulowane | length) > 0 then
+    "", "### Anulowane w bieżącym \($j.w) (\(.anulowane | length))", "",
+    (.anulowane[] | "- #\(.nr) \(.tytul)")
+   else empty end),
   "",
   "## Eskalacje i pytania",
   "",
@@ -464,63 +507,119 @@ jq -r '
   "",
   "## Dokumenty",
   "",
-  (if (.dokumenty | length) == 0 then "Jeszcze brak." else
-    ([.dokumenty[] | select(test("^00-intake/funkcje/") | not)] | .[] |
-      if . == "00-intake/specyfikacja.md" then "- [Specyfikacja](\(.))"
-      elif . == "00-intake/lista-startowa.md" then "- [Lista startowa](\(.))"
-      elif test("plan\\.md$") then "- [Plan](\(.))"
-      elif . == "04-architektura/architektura.md" then "- [Architektura](\(.))"
-      elif . == "decyzje.md" then "- [Decyzje](\(.))"
-      elif test("^08-qa/raport-") then "- [Raport QA \(split("raport-")[1] | rtrimstr(".md"))](\(.))"
-      else "- \(link(.))" end),
-    (([.dokumenty[] | select(test("^00-intake/funkcje/"))]) as $k
-      | if ($k | length) > 0 then "- Karty funkcji: " + ([$k[] | link(.)] | join(", ")) else empty end)
-  end)
-' "$TMP/stan.json" >"$TMP/blok.md"
-
-# Sekcje utrzymywane poza blokiem: z obecnego Projekt.md albo ze starego status.md.
-ZRODLO=""
-if [ -f "$PROJEKT_MD" ]; then ZRODLO="$PROJEKT_MD"; elif [ -f "$STARY" ]; then ZRODLO="$STARY"; fi
-PRZEKAZANIE="$( [ -n "$ZRODLO" ] && sekcja "$ZRODLO" "Punkt przekazania" || true)"
-DZIENNIK="$( [ -n "$ZRODLO" ] && sekcja "$ZRODLO" "Dziennik etapów" || true)"
-[ -n "$PRZEKAZANIE" ] || PRZEKAZANIE="Stan po ostatnim kamieniu milowym, wpisuje orkiestrator.
-
-(brak)"
+  ([.dokumenty[] | select(test("^00-intake/funkcje/") | not)] | .[] |
+    if . == "00-intake/specyfikacja.md" then "- [Specyfikacja](\(.))"
+    elif . == "00-intake/lista-startowa.md" then "- [Lista startowa](\(.))"
+    elif test("plan\\.md$") then "- [Plan](\(.))"
+    elif . == "04-architektura/architektura.md" then "- [Architektura](\(.))"
+    elif . == "decyzje.md" then "- [Decyzje](\(.))"
+    elif test("^08-qa/raport-") then "- [Raport QA \(split("raport-")[1] | rtrimstr(".md"))](\(.))"
+    else "- \(link(.))" end),
+  (([.dokumenty[] | select(test("^00-intake/funkcje/"))]) as $k
+    | if ($k | length) > 0 then "- Karty funkcji: " + ([$k[] | link(.)] | join(", ")) else empty end),
+  "- [Historia](historia.md): punkt przekazania, dziennik etapów, wszystkie zadania"
+' "$TMP/stan.json" >"$TMP/tresc.md"
 
 frontmatter() {
   jq -r --arg sync "$1" '
     "---",
     "projekt: \(.nazwa)",
     "tryb: \(.tryb)",
-    "etap: \(.etap.klucz)",
     "etap_opis: \(.etap.opis | tojson)",
-    "postep: \"\(.postep.x)/\(.postep.y)\"",
+    "postep_etapy: \(if .postep_etapy then "\(.postep_etapy.x)/\(.postep_etapy.y)" else "-" end | tojson)",
+    "postep_zadania: \("\(.postep_zadan.x)/\(.postep_zadan.y)" | tojson)",
     "czeka_na_ciebie: \(.czeka | length)",
-    "eskalacje: \([.eskalacje[] | select(.typ != "pytanie")] | length)",
-    "pytania: \([.eskalacje[] | select(.typ == "pytanie")] | length)",
-    "czeka: \([.czeka[] | {co, od, wpisz}] | tojson)",
-    (.liczniki | to_entries[] | "\(.key): \(.value)"),
-    "wstrzymania: \(.wstrzymania | tojson)",
+    "eskalacje: \(.eskalacje | length)",
+    "nastepny_krok: \(.nastepny | tojson)",
     "ostatnia_synchronizacja: \($sync)",
     "---"' "$TMP/stan.json"
 }
 
-zloz() {
+zloz_projekt() {
   frontmatter "$1"
-  printf '\n# %s\n\n%s\n' "$NAZWA" "$P_START"
-  printf '<!-- Blok generuje scripts/sync-status.sh przy każdej zmianie stanu. Nie edytuj go ręcznie. -->\n\n'
-  cat "$TMP/blok.md"
-  printf '\n%s\n\n## Punkt przekazania\n\n%s\n' "$P_KONIEC" "$PRZEKAZANIE"
-  [ -z "$DZIENNIK" ] || printf '\n## Dziennik etapów\n\n%s\n' "$DZIENNIK"
+  printf '\n# %s\n\n' "$NAZWA"
+  printf '<!-- Plik generuje scripts/sync-status.sh przy każdej zmianie stanu. Nie edytuj go ręcznie. -->\n\n'
+  cat "$TMP/tresc.md"
 }
+
+# --- historia.md --------------------------------------------------------------------------------
+
+jq -r '
+  def komorka: tostring | gsub("\\|"; "\\|") | gsub("\n"; " ");
+  "<!-- Blok generuje scripts/sync-status.sh. Nie edytuj go ręcznie. -->",
+  "",
+  "## Wszystkie zadania zrobione (\(.wszystkie_zrobione | length))",
+  "",
+  (if (.wszystkie_zrobione | length) == 0 then "Jeszcze nic." else
+    "| Zadanie | Kamień | PR | Zamknięte |", "|---|---|---|---|",
+    (.wszystkie_zrobione[] | "| #\(.nr) \(.tytul | komorka) | \(.kamien) | \(if .pr then "#\(.pr)" else "-" end) | \(if .zamkniete != "" then .zamkniete[0:10] else "-" end) |") end),
+  (if (.wszystkie_anulowane | length) > 0 then
+    "", "## Wszystkie zadania anulowane (\(.wszystkie_anulowane | length))", "",
+    (.wszystkie_anulowane[] | "- #\(.nr) \(.tytul)")
+   else empty end)
+' "$TMP/stan.json" >"$TMP/blok-historii.md"
+
+# Część ręczna historii: z obecnej historia.md (poza blokiem) albo nowa. „Punkt przekazania” i
+# „Dziennik etapów” ze starego Projekt.md albo status.md przechodzą tutaj: punkt przekazania
+# zastępuje ten w historii, brakujące wpisy dziennika są dopisywane.
+ZRODLO=""
+if [ -f "$PROJEKT_MD" ] && grep -qE '^## (Punkt przekazania|Dziennik etapów)$' "$PROJEKT_MD"; then
+  ZRODLO="$PROJEKT_MD"
+elif [ -f "$STARY" ]; then
+  ZRODLO="$STARY"
+fi
+STARE_PRZEK="$( [ -n "$ZRODLO" ] && sekcja "$ZRODLO" "Punkt przekazania" || true)"
+STARY_DZIEN="$( [ -n "$ZRODLO" ] && sekcja "$ZRODLO" "Dziennik etapów" || true)"
+case "$STARE_PRZEK" in *"(brak)") STARE_PRZEK="" ;; esac
+
+if [ -f "$HISTORIA" ]; then
+  awk -v s="$H_START" -v k="$H_KONIEC" '$0 == s { w = 1 } !w { print } $0 == k { w = 0 }' "$HISTORIA" |
+    awk 'NF { for (; p > 0; p--) print ""; print; next } { p++ }' >"$TMP/reczna.md"
+  grep -qxF '## Punkt przekazania' "$TMP/reczna.md" || printf '\n## Punkt przekazania\n\n(brak)\n' >>"$TMP/reczna.md"
+  grep -qxF '## Dziennik etapów' "$TMP/reczna.md" || printf '\n## Dziennik etapów\n\n(brak)\n' >>"$TMP/reczna.md"
+else
+  printf '# Historia projektu\n\nPunkt przekazania wpisuje orkiestrator po kamieniu milowym, dziennik etapów `shctl stage`, a listę\nzadań `scripts/sync-status.sh`.\n\n## Punkt przekazania\n\n(brak)\n\n## Dziennik etapów\n\n(brak)\n' >"$TMP/reczna.md"
+fi
+
+# Zastępuje treść sekcji „## NAZWA” w pliku (do następnego nagłówka ## albo końca).
+zastap_sekcje() {
+  local plik="$1" nazwa="$2" tresc="$3"
+  printf '%s\n' "$tresc" >"$TMP/sekcja.txt"
+  awk -v n="## $nazwa" -v t="$TMP/sekcja.txt" '
+    $0 == n { print; print ""; while ((getline l < t) > 0) print l; close(t); print ""; w = 1; next }
+    w && /^## / { w = 0 }
+    !w { print }' "$plik" | awk 'NF { for (; p > 0; p--) print ""; print; next } { p++ }' >"$TMP/sekcja.out"
+  mv "$TMP/sekcja.out" "$plik"
+}
+
+[ -z "$STARE_PRZEK" ] || zastap_sekcje "$TMP/reczna.md" "Punkt przekazania" "$STARE_PRZEK"
+if [ -n "$STARY_DZIEN" ]; then
+  obecny="$(sekcja "$TMP/reczna.md" "Dziennik etapów" | grep -vxF '(brak)' || true)"
+  nowe="$(printf '%s\n' "$STARY_DZIEN" | while IFS= read -r l; do
+    [ -z "$l" ] || printf '%s\n' "$obecny" | grep -qxF -- "$l" || printf '%s\n' "$l"
+  done)"
+  [ -z "$nowe" ] || zastap_sekcje "$TMP/reczna.md" "Dziennik etapów" "${obecny:+$obecny
+}$nowe"
+fi
+
+{
+  cat "$TMP/reczna.md"
+  printf '\n%s\n' "$H_START"
+  cat "$TMP/blok-historii.md"
+  printf '%s\n' "$H_KONIEC"
+} >"$TMP/historia.md"
+
+# --- Zapis --------------------------------------------------------------------------------------
 
 STARA_SYNC="$( [ -f "$PROJEKT_MD" ] && fm_get "$PROJEKT_MD" ostatnia_synchronizacja || true)"
 [ -n "$STARA_SYNC" ] || STARA_SYNC=brak
-zloz "$STARA_SYNC" >"$TMP/Projekt.md"
+zloz_projekt "$STARA_SYNC" >"$TMP/Projekt.md"
+jq -c '[.czeka[] | {co, od, wpisz}]' "$TMP/stan.json" >"$TMP/czeka.json"
 
 zmiany=0
 cmp -s "$TMP/index.md" "$INDEKS" || zmiany=1
 if [ -f "$PROJEKT_MD" ]; then cmp -s "$TMP/Projekt.md" "$PROJEKT_MD" || zmiany=1; else zmiany=1; fi
+if [ -f "$HISTORIA" ]; then cmp -s "$TMP/historia.md" "$HISTORIA" || zmiany=1; else zmiany=1; fi
 [ ! -f "$STARY" ] || zmiany=1
 
 if [ "$DRY" -eq 1 ]; then
@@ -529,12 +628,23 @@ if [ "$DRY" -eq 1 ]; then
   exit 0
 fi
 
+teraz_iso() { date -u -r "$TERAZ" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d "@$TERAZ" +%Y-%m-%dT%H:%M:%SZ; }
+
 if [ -n "$WYJSCIE" ]; then
   mkdir -p "$WYJSCIE"
-  zloz "$(date -u -r "$TERAZ" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d "@$TERAZ" +%Y-%m-%dT%H:%M:%SZ)" >"$WYJSCIE/Projekt.md"
+  zloz_projekt "$(teraz_iso)" >"$WYJSCIE/Projekt.md"
+  cp "$TMP/historia.md" "$WYJSCIE/historia.md"
   cp "$TMP/index.md" "$WYJSCIE/index.md"
-  echo "sync-status: zapisano $WYJSCIE/Projekt.md i $WYJSCIE/index.md"
+  cp "$TMP/czeka.json" "$WYJSCIE/czeka.json"
+  echo "sync-status: zapisano Projekt.md, historia.md, index.md i czeka.json w $WYJSCIE"
   exit 0
+fi
+
+# Lista „Czeka na Ciebie” dla przypomnień i shctl status (serwer SH; poza repo).
+if [ -d "$SH_DIR/stan" ]; then
+  mkdir -p "$SH_DIR/stan/czeka"
+  cmp -s "$TMP/czeka.json" "$SH_DIR/stan/czeka/$NAZWA.json" 2>/dev/null ||
+    cp "$TMP/czeka.json" "$SH_DIR/stan/czeka/$NAZWA.json"
 fi
 
 if [ "$zmiany" -eq 0 ]; then
@@ -542,11 +652,12 @@ if [ "$zmiany" -eq 0 ]; then
   exit 0
 fi
 
-zloz "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$TMP/Projekt.md"
+zloz_projekt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$TMP/Projekt.md"
 cat "$TMP/index.md" >"$INDEKS"
 cat "$TMP/Projekt.md" >"$PROJEKT_MD"
+cat "$TMP/historia.md" >"$HISTORIA"
 if [ -f "$STARY" ]; then
   rm -f "$STARY"
-  echo "sync-status: docs/status.md zastąpiony przez docs/Projekt.md"
+  echo "sync-status: docs/status.md zastąpiony przez docs/Projekt.md i docs/historia.md"
 fi
-echo "sync-status: zaktualizowano index.md i Projekt.md"
+echo "sync-status: zaktualizowano index.md, Projekt.md i historia.md"
