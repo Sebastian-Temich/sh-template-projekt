@@ -219,7 +219,8 @@ EOF
   cat "$(P)"
   [ "$(fm etap_opis)" = '"Zakończony"' ]
   grep -qxF 'Nic. Projekt zakończony.' "$(P)"
-  grep -qF -- '- **Postęp:** Etapy 5/5 · Zadania 2/2' "$(P)"
+  grep -qxF -- '- **Postęp:** Etapy 5/5 · Zadania 2/2 w bieżącym zleceniu (łącznie 6)' "$(P)"
+  [ "$(fm postep_zadania)" = '"2/2"' ]
   grep -qF '### Zrobione w bieżącym zleceniu (2)' "$(P)"
   grep -qF '| #101 Poprawka 101 |' "$(P)"
   ! grep -qF '#4 Zadanie 4' "$(P)" || false
@@ -241,7 +242,7 @@ EOF
   grep -qF '| #1 Zadanie 1 |' "$(H)"
 }
 
-@test "przebieg dryrun: zadania od resetu, etapy przygotowania w todo pominiete" {
+@test "przebieg dryrun: zadania od resetu, etapy przygotowania i wydanie w todo pominiete" {
   zamkniete 3
   jq '. + [{number: 20, title: "Nowe", state: "CLOSED", stateReason: "COMPLETED", labels: [], milestone: {title: "M1"},
     body: "", createdAt: "2026-11-04T22:28:00Z", closedAt: "2026-11-04T23:00:00Z"},
@@ -252,10 +253,50 @@ EOF
   run sync --dane "$D"
   [ "$status" -eq 0 ]
   cat "$(P)"
-  grep -qF -- '- **Postęp:** Etapy 0/2 · Zadania 1/2' "$(P)"
+  grep -qxF -- '- **Postęp:** Etapy 0/1 · Zadania 1/2 w bieżącym przebiegu (łącznie 5)' "$(P)"
   grep -qF -- '- **Etap:** Realizacja, kamień M1' "$(P)"
   grep -qF '### Zrobione w bieżącym przebiegu (1)' "$(P)"
   grep -qF 'Wcześniejsze przebiegi (3 zadań): [Historia](historia.md).' "$(P)"
+}
+
+@test "przebieg dryrun po QA: wydanie pominiete, przebieg zakonczony" {
+  zamkniete 3
+  jq '. + [{number: 20, title: "Nowe", state: "CLOSED", stateReason: "COMPLETED", labels: [], milestone: {title: "M1"},
+    body: "", createdAt: "2026-11-04T22:28:00Z", closedAt: "2026-11-04T23:00:00Z"}]' "$D/issues.json" >"$D/x" && mv "$D/x" "$D/issues.json"
+  for e in 00-intake 04-plan 06-zadania wydanie; do etap "$e" todo; done
+  printf '# Metryki\n\n## Przebieg dryrun 3: max_local=2 (2026-11-04)\n\nReset do baseline `624bd6f` o 22:27 UTC.\n' >"$ROOT/docs/metryki.md"
+  run sync --dane "$D"
+  [ "$status" -eq 0 ]
+  cat "$(P)"
+  [ "$(fm etap_opis)" = '"Zakończony"' ]
+  grep -qxF -- '- **Postęp:** Etapy 1/1 · Zadania 1/1 w bieżącym przebiegu (łącznie 4)' "$(P)"
+  grep -qxF 'Nic. Projekt zakończony.' "$(P)"
+}
+
+@test "kazdy naglowek wystepuje raz w Projekt.md i historia.md (rozne stany)" {
+  local stan
+  for stan in poczatek realizacja zamkniete; do
+    case "$stan" in
+      realizacja) realizacja ;;
+      zamkniete) zamkniete 12 3 ;;
+    esac
+    run sync --dane "$D"
+    [ "$status" -eq 0 ]
+    [ -z "$(grep -E '^#{1,6} ' "$(P)" | sort | uniq -d)" ] || { echo "$stan Projekt.md"; grep -E '^#' "$(P)"; false; }
+    [ -z "$(grep -E '^#{1,6} ' "$(H)" | sort | uniq -d)" ] || { echo "$stan historia.md"; grep -E '^#' "$(H)"; false; }
+    [ "$(grep -c '^# ' "$(P)")" -eq 1 ]
+  done
+}
+
+@test "zamkniete eskalacje jako linki do plikow" {
+  realizacja
+  mkdir -p "$ROOT/docs/07-realizacja/escalations"
+  printf -- '---\nid: E-001\nstatus: zamknieta\ndotyczy: "#2"\npowod: x\n---\n' >"$ROOT/docs/07-realizacja/escalations/E-001.md"
+  printf -- '---\nid: E-002\nstatus: zamknieta\ndotyczy: "#3"\npowod: y\n---\n' >"$ROOT/docs/07-realizacja/escalations/E-002.md"
+  run sync --dane "$D"
+  [ "$status" -eq 0 ]
+  grep -qxF 'Zamknięte (2): [E-001](07-realizacja/escalations/E-001.md), [E-002](07-realizacja/escalations/E-002.md).' "$(P)"
+  ! grep -qF '`07-realizacja/escalations/`' "$(P)" || false
 }
 
 @test "zlecenie_od z konfiguracji wyznacza biezace zlecenie" {

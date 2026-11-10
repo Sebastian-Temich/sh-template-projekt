@@ -336,10 +336,12 @@ jq -n \
       | . + {czeka_na: [.zal[] | select(($mapa[tostring] // null) as $i
           | $i == null or ($i.state == "OPEN") or ($i.stateReason == "NOT_PLANNED"))]})) as $todo
   # Etapy: etap przygotowania w todo przy zadaniach zlecenia jest pominięty (np. przebieg dryrun
-  # z zadaniami z zadania.yaml), tak jak status pominiety.
+  # z zadaniami z zadania.yaml), tak jak status pominiety. Przebieg dryrun kończy się na QA, więc
+  # wydanie w todo też jest wtedy pominięte.
   | (($biezace_bez_anul | length) > 0) as $sa_zadania
   | ($etapy[0] | map(. + {pominiety: (.status == "pominiety"
-      or ($sa_zadania and .status == "todo" and (.etap | IN("08-qa", "wydanie") | not)))})) as $et
+      or ($sa_zadania and .status == "todo" and (.etap | IN("08-qa", "wydanie") | not))
+      or ($przebieg_od != "" and .etap == "wydanie" and .status == "todo"))})) as $et
   | ([$et[] | select(.pominiety | not)]) as $et_akt
   | ($esk[0] | map(select(.status == "otwarta"))) as $otwarte_esk
   | ($lista | split("\n") | map(select(length > 0))) as $lista
@@ -408,7 +410,8 @@ jq -n \
       anulowane: [$biezace[] | select(.status == "anulowane")],
       wszystkie_zrobione: ([$z[] | select(.status == "done")] | ostatnio),
       wszystkie_anulowane: [$z[] | select(.status == "anulowane")],
-      eskalacje: $otwarte_esk, eskalacje_zamkniete: ($esk[0] | map(select(.status != "otwarta")) | length),
+      zadania_lacznie: ([$z[] | select(.status != "anulowane")] | length),
+      eskalacje: $otwarte_esk, eskalacje_zamkniete: [$esk[0][] | select(.status != "otwarta") | .id],
       dokumenty: $dok[0], wstrzymania: $wstrz[0],
       tabela: $z
     }
@@ -448,7 +451,8 @@ jq -r --argjson ile "$OSTATNICH" '
   | "## Gdzie jesteśmy",
   "",
   "- **Etap:** \(.etap.opis)",
-  "- **Postęp:** Etapy \(if .postep_etapy then "\(.postep_etapy.x)/\(.postep_etapy.y)" else "–" end) · Zadania \(.postep_zadan.x)/\(.postep_zadan.y)",
+  "- **Postęp:** Etapy \(if .postep_etapy then "\(.postep_etapy.x)/\(.postep_etapy.y)" else "–" end) · Zadania \(.postep_zadan.x)/\(.postep_zadan.y)"
+    + (if .zadania_lacznie > .postep_zadan.y then " w bieżącym \($j.w) (łącznie \(.zadania_lacznie))" else "" end),
   "- **Co się dzieje:** " + (if (.w_toku | length) > 0
       then ([.w_toku[] | "#\(.nr) \(.tytul) (\(.status | stan_slownie)\(if .iter > 1 then ", iteracja \(.iter)" else "" end)\(if .od_slownie != "-" then ", od \(.od_slownie)" else "" end))"] | join("; "))
       elif (.etap.status // "") != "" then "etap \(.etap.opis | ascii_downcase) \({"todo": "jeszcze nie rozpoczęty", "in-progress": "w przygotowaniu", "review": "w review", "escalated": "wstrzymany eskalacją"}[.etap.status] // .etap.status)"
@@ -503,7 +507,9 @@ jq -r --argjson ile "$OSTATNICH" '
   (if (.eskalacje | length) == 0 then "Otwartych brak." else
     "| Nr | Rodzaj | Dotyczy | Powód |", "|---|---|---|---|",
     (.eskalacje[] | "| \(.id) | \(if .typ == "pytanie" then "pytanie" else "eskalacja" end) | \(.dotyczy) | \(.powod | komorka) |") end),
-  (if .eskalacje_zamkniete > 0 then "", "Zamknięte: \(.eskalacje_zamkniete) (`07-realizacja/escalations/`)." else empty end),
+  (if (.eskalacje_zamkniete | length) > 0 then "",
+    "Zamknięte (\(.eskalacje_zamkniete | length)): " + ([.eskalacje_zamkniete[] | "[\(.)](07-realizacja/escalations/\(.).md)"] | join(", ")) + "."
+   else empty end),
   "",
   "## Dokumenty",
   "",
