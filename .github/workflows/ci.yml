@@ -1,3 +1,5 @@
+# Runner: zmienna repo SH_RUNS_ON (JSON, np. ["self-hosted","sh-imac"] w repo prywatnym, ustawia shctl
+# new-project --prywatny); bez niej ubuntu-24.04 GitHuba.
 # Oszczędność minut (sh-system/docs/serwer.md, „CI i minuty GitHub Actions”):
 # - check-dod i gitleaks działają zawsze (PR, push na main, ręcznie); na pushu gitleaks jest krokiem
 #   joba check-dod (jeden job = jedna minuta zamiast dwóch);
@@ -28,7 +30,7 @@ concurrency:
 
 jobs:
   check-dod:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.SH_RUNS_ON || '"ubuntu-24.04"') }}
     timeout-minutes: 5
     outputs:
       kod: ${{ steps.zakres.outputs.kod }}
@@ -66,7 +68,7 @@ jobs:
   lint:
     needs: check-dod
     if: needs.check-dod.outputs.kod == 'true'
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.SH_RUNS_ON || '"ubuntu-24.04"') }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -76,7 +78,7 @@ jobs:
   test:
     needs: check-dod
     if: needs.check-dod.outputs.kod == 'true'
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.SH_RUNS_ON || '"ubuntu-24.04"') }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -86,7 +88,7 @@ jobs:
   e2e:
     needs: check-dod
     if: needs.check-dod.outputs.e2e == 'true'
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.SH_RUNS_ON || '"ubuntu-24.04"') }}
     # Zapas nad limitami kroków niżej: job kończy krok z komunikatem, zanim GitHub go przerwie.
     timeout-minutes: 25
     steps:
@@ -142,7 +144,7 @@ jobs:
   qa-staging:
     needs: check-dod
     if: (needs.check-dod.outputs.kod == 'true' || needs.check-dod.outputs.e2e == 'true') && startsWith(github.head_ref, 'stage/08-qa')
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.SH_RUNS_ON || '"ubuntu-24.04"') }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -191,7 +193,7 @@ jobs:
 
   gitleaks:
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.SH_RUNS_ON || '"ubuntu-24.04"') }}
     timeout-minutes: 5
     env:
       GITLEAKS_VERSION: 8.30.1

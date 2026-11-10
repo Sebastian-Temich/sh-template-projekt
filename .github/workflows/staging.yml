@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   migracje:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.SH_RUNS_ON || '"ubuntu-24.04"') }}
     timeout-minutes: 10
     env:
       STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}

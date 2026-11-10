@@ -68,7 +68,8 @@ liście eskalacji.
 
 Worker NIE edytuje tych plików. Aktualizuje je wyłącznie orkiestrator, na `main`, po merge'u:
 
-- `docs/status.md`
+- `docs/Projekt.md` (generuje `scripts/sync-status.sh`)
+- `docs/historia.md` (punkt przekazania, dziennik etapów, lista zadań z `scripts/sync-status.sh`)
 - `docs/decyzje.md`
 - `docs/metryki.md`
 - `docs/backlog-drobne.md`

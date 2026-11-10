@@ -12,7 +12,7 @@
 }
 
 @test "dane testowe maja pliki uzywane przez testy" {
-  for f in konfiguracja.md status.md decyzje.md 00-intake/DoD.md 08-qa/DoD.md wydanie/DoD.md 06-zadania/index.md; do
+  for f in konfiguracja.md Projekt.md historia.md decyzje.md 00-intake/DoD.md 08-qa/DoD.md wydanie/DoD.md 06-zadania/index.md; do
     [ -f "$BATS_TEST_DIRNAME/dane/docs/$f" ] || { echo "brak dane/docs/$f"; false; }
   done
 }
