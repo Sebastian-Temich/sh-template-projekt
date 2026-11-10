@@ -28,7 +28,7 @@ modele:
 # Review PR i etapów: wartości wspólne są w /Users/Shared/sh/konfiguracja.md (review). Tu tylko
 # nadpisanie dla projektu, pole po polu, np.:
 # review:
-#   zwykle: {silnik: codex, model: gpt-6-luna, effort: medium}
+#   zwykle: {silnik: codex, model: gpt-6-astra, effort: medium}
 #   gdy_limit: drugi_silnik
 hosting:
   aplikacja: vercel
