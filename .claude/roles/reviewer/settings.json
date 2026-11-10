@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "skillOverrides": {
+    "tworca-wymagan": "off",
+    "iskt-softwarehouse-tworca-wymagan": "off",
+    "iskt-planista-realizacji": "off"
+  },
+  "permissions": {
+    "defaultMode": "dontAsk",
+    "allow": [
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git status)",
+      "Bash(git ls-files *)",
+      "Bash(git grep *)",
+      "Bash(git merge-base *)",
+      "Bash(git rev-parse *)",
+      "Bash(ls *)",
+      "Bash(pwd)",
+      "Bash(wc *)"
+    ],
+    "deny": [
+      "Edit",
+      "Write",
+      "MultiEdit",
+      "NotebookEdit",
+      "WebFetch",
+      "WebSearch",
+      "Agent",
+      "Skill(tworca-wymagan)",
+      "Skill(iskt-softwarehouse-tworca-wymagan)",
+      "Skill(iskt-planista-realizacji)",
+      "Read(~/Documents/**)",
+      "Read(~/Desktop/**)",
+      "Read(~/Downloads/**)",
+      "Read(~/Library/Mobile Documents/**)",
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.env.*.local)",
+      "Read(**/.env.development*)",
+      "Read(**/.env.test*)",
+      "Read(**/.env.staging*)",
+      "Read(**/.env.prod*)",
+      "Bash(*.env)",
+      "Bash(*.env *)",
+      "Bash(*.env.local*)",
+      "Bash(*.env.development*)",
+      "Bash(*.env.test*)",
+      "Bash(*.env.staging*)",
+      "Bash(*.env.prod*)",
+      "Bash(git * --no-index*)",
+      "Bash(git * --exec-path*)",
+      "Bash(git * --output*)",
+      "Bash(git * --ext-diff*)",
+      "Bash(git * --textconv*)",
+      "Bash(git blame *--contents*)",
+      "Bash(git -c *)",
+      "Bash(git -C *)",
+      "Bash(git config *)",
+      "Bash(git push)",
+      "Bash(git push *)",
+      "Bash(git commit)",
+      "Bash(git commit *)",
+      "Bash(git add)",
+      "Bash(git add *)",
+      "Bash(git reset)",
+      "Bash(git reset *)",
+      "Bash(git checkout)",
+      "Bash(git checkout *)",
+      "Bash(git switch)",
+      "Bash(git switch *)",
+      "Bash(git restore)",
+      "Bash(git restore *)",
+      "Bash(git merge)",
+      "Bash(git merge *)",
+      "Bash(git rebase)",
+      "Bash(git rebase *)",
+      "Bash(git fetch)",
+      "Bash(git fetch *)",
+      "Bash(git pull)",
+      "Bash(git pull *)",
+      "Bash(git worktree)",
+      "Bash(git worktree *)",
+      "Bash(git stash)",
+      "Bash(git stash *)",
+      "Bash(git tag)",
+      "Bash(git tag *)",
+      "Bash(git branch)",
+      "Bash(git branch *)",
+      "Bash(gh *)",
+      "Bash(shctl *)",
+      "Bash(curl *)",
+      "Bash(sudo *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/Shared/sh/bin/odczyt-hook.sh || exit 2",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Edit|Write|MultiEdit|NotebookEdit|Glob|Grep|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/Shared/sh/bin/env-hook.sh || exit 2",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "allowUnsandboxedCommands": false,
+    "excludedCommands": [],
+    "network": {
+      "allowedDomains": []
+    }
+  }
+}
