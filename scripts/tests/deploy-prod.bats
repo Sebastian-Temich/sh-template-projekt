@@ -60,6 +60,9 @@ exit 0'
 # Pełny przebieg z potwierdzeniem w prawdziwym terminalu.
 z_potwierdzeniem() {
   command -v expect >/dev/null || skip "brak expect"
+  # Sandbox Claude Code nie daje pseudoterminala („The system has no more ptys”): test sprawdza CI.
+  # expect kończy się kodem 0 także po nieudanym spawn, stąd catch.
+  expect -c 'if {[catch {spawn true}]} {exit 1}; expect eof' >/dev/null 2>&1 || skip "brak pty (sandbox), sprawdza CI"
   run expect -c "
     set timeout 30
     log_user 1

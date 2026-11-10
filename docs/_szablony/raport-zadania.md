@@ -1,7 +1,7 @@
 # Raport T-NR: TYTUŁ
 
 Issue: #NR
-PR: #NR
+PR: (wpisuje shctl task close)
 
 ## Co zrobiono
 
