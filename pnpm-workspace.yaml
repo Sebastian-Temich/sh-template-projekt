@@ -1,0 +1,7 @@
+# pnpm 11+ uruchamia skrypty budowania zależności (postinstall) tylko z tej listy. Bez wpisu
+# `pnpm install` pomija build pakietu albo kończy się błędem (iskt-www T-5). Zadanie szkieletu
+# dopisuje pakiety z natywnymi binarkami swojego stacku (true: buduj, false: pomiń bez ostrzeżenia).
+# W repo bez Node plik jest nieużywany.
+allowBuilds:
+  esbuild: true
+  sharp: true

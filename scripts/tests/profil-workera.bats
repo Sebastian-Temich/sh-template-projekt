@@ -144,6 +144,14 @@ bash_regula() {
   [ "$(bash_regula "curl https://example.com")" = brak ]
 }
 
+@test "fnm: list, current i exec dozwolone, install i use nie (wersje Node zmienia dispatch)" {
+  for c in "fnm list" "fnm list --help" "fnm current" "fnm exec --using=22 pnpm build" "fnm exec --using=.nvmrc node -v"; do
+    [ "$(bash_regula "$c")" = allow ] || { echo "nie dozwolone: $c"; false; }
+  done
+  [ "$(bash_regula "fnm install 22")" = brak ]
+  [ "$(bash_regula "fnm use 22")" = brak ]
+}
+
 @test "odczyt: bez ogolnego Read, Glob i Grep; zakres pilnuje hook odczyt-hook.sh" {
   for p in "$PROFIL"; do
     run jq -e '.permissions.allow | (index("Read") // index("Glob") // index("Grep"))' "$p"

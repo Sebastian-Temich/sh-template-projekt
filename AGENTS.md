@@ -25,7 +25,7 @@ Stałe dla wszystkich projektów:
 | Obszar | Kontrakt |
 |---|---|
 | Node | LTS przez fnm |
-| Pakiety JS | Wyłącznie pnpm |
+| Pakiety JS | Wyłącznie pnpm; skrypty budowania zależności tylko z `allowBuilds` w `pnpm-workspace.yaml` |
 | Python | uv |
 | Baza lokalnie | Supabase CLI, blok portów z `/Users/Shared/sh/porty.md` |
 | Docker | Tylko dla usług (Supabase) |
@@ -84,7 +84,7 @@ Worker działa w trybie `dontAsk` z `.claude/roles/worker/settings.json`: polece
 dozwolonych dostaje odmowę bez pytania. Jedno wywołanie Bash to jedna prosta komenda: bez `&&`, `;`,
 pętli, `$(...)`, heredoców, `cd` i przekierowań do pliku (szczegóły i przykłady: skill `sh-worker`).
 
-- Dozwolone: `git`, `gh`, `pnpm`, `npm`, `npx`, `node`, `uv`, lokalne `supabase` (init, start, stop,
+- Dozwolone: `git`, `gh`, `pnpm`, `npm`, `npx`, `node`, `uv`, `fnm list|current|exec`, lokalne `supabase` (init, start, stop,
   status, migration, db reset/diff, gen types, test db), `gitleaks`, `bats`, `shellcheck`,
   `bash scripts/check-dod.sh`, `shctl escalate`; `rm`, `mv`, `cp`, `mkdir`, `touch` w worktree;
   pomocnicze `cat`, `head`, `tail`, `grep`, `wc`, `sort`, `uniq`, `cut`, `diff`, `echo`, `which`.
@@ -120,7 +120,8 @@ uprawnień: tylko przez PR szablonu z akceptacją właściciela.
 ## Raport zadania
 
 Każde zadanie kończy się raportem `docs/07-realizacja/T-NR.md`, szablon:
-`docs/_szablony/raport-zadania.md`. Bez raportu zadanie nie jest gotowe. Sekcje obowiązkowe:
+`docs/_szablony/raport-zadania.md`. Bez raportu zadanie nie jest gotowe. Linię `PR:` wpisuje
+`shctl task close` po merge'u, więc numer PR nie wymaga drugiego commita. Sekcje obowiązkowe:
 
 - **Decyzje** (orkiestrator przenosi do `decyzje.md`),
 - **Drobne uwagi** (orkiestrator przenosi do `backlog-drobne.md`),
