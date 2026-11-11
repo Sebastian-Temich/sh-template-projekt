@@ -361,3 +361,30 @@ EOF
   [ -f "$BATS_TEST_TMPDIR/podglad/czeka.json" ]
   [ ! -e "$SH_DIR/stan/czeka/demo.json" ]
 }
+
+@test "eskalacja z opcja bez etykiety: pelny tekst do wpisania (dryrun 5)" {
+  realizacja
+  mkdir -p "$ROOT/docs/07-realizacja/escalations"
+  printf -- '---\nid: E-001\nstatus: otwarta\ndotyczy: "#2"\npowod: sprzeczne kryteria\notwarto: 2026-11-09T07:00:00Z\n---\n\n# E\n\n## Opcje i rekomendacja\n\n- Zamknąć #2 jako niewykonalne (proponowane)\n- Zmienić kryterium K2\n\n## Czego potrzeba od właściciela\n' \
+    >"$ROOT/docs/07-realizacja/escalations/E-001.md"
+  run sync --dane "$D"
+  [ "$status" -eq 0 ]
+  grep -qF 'Wpisz orkiestratorowi: `E-001: Zamknąć #2 jako niewykonalne (proponowane)`' "$(P)"
+  # Etykieta „2)” zostaje skrótem.
+  sed 's/^- Zamknąć/- 2) Zamknąć/' "$ROOT/docs/07-realizacja/escalations/E-001.md" >"$ROOT/x" && mv "$ROOT/x" "$ROOT/docs/07-realizacja/escalations/E-001.md"
+  run sync --dane "$D"
+  grep -qF 'Wpisz orkiestratorowi: `E-001: 2`' "$(P)"
+}
+
+@test "zaleznosci tylko z pola strukturalnego: notatka z #NR pod lista nie blokuje" {
+  realizacja
+  jq 'map(if .number == 4 then .body = "### Zależności\n\n#3\n\nWcześniej też #2 (usunięte po E-001).\n" else . end)' "$D/issues.json" >"$D/x" && mv "$D/x" "$D/issues.json"
+  run sync --dane "$D"
+  [ "$status" -eq 0 ]
+  cat "$(P)"
+  grep -qF '### Gotowe do startu (1)' "$(P)"
+  grep -qF '### Zaplanowane (1)' "$(P)"
+  jq 'map(if .number == 4 then .body = "### Zależności\n\nbrak\n\nUwaga: #2 i #3 nie blokują.\n" else . end)' "$D/issues.json" >"$D/x" && mv "$D/x" "$D/issues.json"
+  run sync --dane "$D"
+  grep -qF '### Gotowe do startu (2)' "$(P)"
+}

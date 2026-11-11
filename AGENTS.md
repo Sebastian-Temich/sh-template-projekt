@@ -103,6 +103,9 @@ pętli, `$(...)`, heredoców, `cd` i przekierowań do pliku (szczegóły i przyk
   `~/.cache`, `~/Library/Caches`, katalogi blokad pnpm `/tmp/pnpm-*-502`), sieć tylko do GitHuba, rejestru npm i pobierania Playwrighta.
   Odmowa sandboxa (`EPERM`, `403` z proxy) to granica roli: nie obchodzisz jej, opisujesz w „Ryzykach”
   albo eskalujesz, gdy blokuje kryterium.
+- Gałąź zadania aktualizujesz o `main` przez `gh pr update-branch NR_PR` i `git pull` (bez PR:
+  `git pull --no-rebase origin main`), nie lokalnym `git merge`: ten działa w sandboxie, który nie
+  pozwala zapisać plików wspólnych, i pada w połowie, gdy `main` je zmienia.
 - E2E i Lighthouse nie działają lokalnie (przeglądarki nie startują w sandboxie). Lokalnie: lint, typy,
   testy jednostkowe i build. Testy E2E piszesz, a uruchamia je CI; czerwony job `e2e` czytasz przez
   `gh run view RUN --log-failed` i poprawiasz w zakresie zadania.
