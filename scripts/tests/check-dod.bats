@@ -91,6 +91,19 @@ zaznacz_wszystko() {
   [[ "$output" == *"status done, ale"* ]] || false
 }
 
+@test "pola - [ ] w komentarzach HTML nie blokuja done (dryrun 5)" {
+  status_etapu 08-qa done
+  zaznacz_wszystko 08-qa
+  printf '\n<!-- Przykład:\n- [ ] pole w przykładzie\n- [-] bez powodu\n-->\n<!-- - [ ] w jednej linii -->\n' >>"$ROOT/docs/08-qa/DoD.md"
+  run bash "$SKRYPT" "$ROOT"
+  echo "$output"
+  [ "$status" -eq 0 ]
+  printf '<!-- x --> - [ ] po komentarzu\n' >>"$ROOT/docs/08-qa/DoD.md"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"status done, ale"* ]] || false
+}
+
 @test "status done z zaznaczonymi polami" {
   status_etapu 08-qa done
   zaznacz_wszystko 08-qa

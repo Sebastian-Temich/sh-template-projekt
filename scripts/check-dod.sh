@@ -45,18 +45,28 @@ ma_frontmatter() {
 
 # Wypisuje: "niezaznaczone zaznaczone nie-dotyczy błędne-nie-dotyczy".
 # Pole „nie dotyczy”: `- [-] treść (nie dotyczy: powód)`, np. E2E w bibliotece bez UI. Powód jest
-# obowiązkowy; pole bez niego liczy się jako błąd.
+# obowiązkowy; pole bez niego liczy się jako błąd. Pola w blokach kodu i komentarzach HTML (przykłady
+# w szablonach) się nie liczą.
 policz_checkboxy() {
   awk -v tryb="$2" '
-    /^[ \t]*(```|~~~)/ { kod = !kod; next }
+    !kom && /^[ \t]*(```|~~~)/ { kod = !kod; next }
     kod { next }
-    /<!-- tylko-tryb:L -->/ { tylko_l = 1; next }
-    /<!-- \/tylko-tryb -->/ { tylko_l = 0; next }
+    !kom && /<!-- tylko-tryb:L -->/ { tylko_l = 1; next }
+    !kom && /<!-- \/tylko-tryb -->/ { tylko_l = 0; next }
     tylko_l && tryb != "L" { next }
-    /^[ \t]*[-*+] \[ \]/ { puste++ }
-    /^[ \t]*[-*+] \[[xX]\]/ { pelne++ }
-    /^[ \t]*[-*+] \[-\]/ {
-      if ($0 ~ /nie dotyczy: *[^ )]/) nd++
+    {
+      l = $0
+      if (kom) { if (index(l, "-->")) { l = substr(l, index(l, "-->") + 3); kom = 0 } else next }
+      while (index(l, "<!--")) {
+        p = index(l, "<!--"); r = substr(l, p + 4)
+        if (index(r, "-->")) l = substr(l, 1, p - 1) substr(r, index(r, "-->") + 3)
+        else { l = substr(l, 1, p - 1); kom = 1 }
+      }
+    }
+    l ~ /^[ \t]*[-*+] \[ \]/ { puste++ }
+    l ~ /^[ \t]*[-*+] \[[xX]\]/ { pelne++ }
+    l ~ /^[ \t]*[-*+] \[-\]/ {
+      if (l ~ /nie dotyczy: *[^ )]/) nd++
       else zle++
     }
     END { print puste + 0, pelne + 0, nd + 0, zle + 0 }' "$1"

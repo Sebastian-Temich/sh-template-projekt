@@ -270,13 +270,15 @@ jq -n \
       else first(("escalated", "blocked", "review", "in-progress", "todo")
         | select(("status:" + .) as $n | $e | index($n))) // "todo" end;
   def iteracja: [etykiety[] | select(startswith("iter:")) | ltrimstr("iter:") | tonumber] | max // 0;
+  # Zależności z pola strukturalnego, jak w shctl: lista „#NR, #NR” w pierwszej niepustej linii sekcji;
+  # notatki pod nią (np. „#79 anulowane”) nie są zależnościami.
   def zaleznosci:
     ((.body // "") | split("\n")) as $l
     | ([range(0; $l | length) | select($l[.] | test("^#{2,3} *Zależności"))][0]) as $i
     | if $i == null then []
-      else ($l[($i + 1):]) as $r
-        | ([range(0; $r | length) | select($r[.] | test("^#{2,3} "))][0] // ($r | length)) as $k
-        | $r[0:$k] | join(" ") | [scan("#([0-9]+)") | .[0] | tonumber] end;
+      else ([$l[($i + 1):][] | select(test("^\\s*$") | not)][0] // "") as $p
+        | if ($p | test("^#{2,3} ")) then []
+          else [(($p | capture("^(?<l>(\\s*#[0-9]+\\s*,?)+)").l) // "") | scan("#([0-9]+)") | .[0] | tonumber] | unique end end;
   def iso: if . == null or . == "" then "" else sub("\\.[0-9]+Z$"; "Z") end;
   def czas($s): if $s == null or $s == "" then null else ($teraz - ($s | iso | fromdateiso8601)) end;
   def slownie($sek):
@@ -370,7 +372,10 @@ jq -n \
   | ([ $otwarte_esk[]
         | {co: "\(.id) (\(.dotyczy)\(if .typ == "pytanie" then ", pytanie" else "" end)): \(.powod)",
            od: .od,
-           wpisz: "\(.id): \((.opcje[0] // "TWOJA ODPOWIEDŹ") | split(" ")[0] | rtrimstr(":") | rtrimstr(")"))",
+           # Opcja z etykietą („A: …”, „2) …”) to sama etykieta; bez etykiety pełny tekst opcji
+           # (dryrun 5: „E-001: Zamknąć” ucinało opcję do pierwszego słowa).
+           wpisz: "\(.id): \((.opcje[0] // "TWOJA ODPOWIEDŹ") as $o
+             | if ($o | test("^[A-Za-z0-9]{1,2}[:)] ")) then ($o | capture("^(?<e>[A-Za-z0-9]{1,2})[:)]").e) else $o end)",
            opcje: .opcje} ]
      + [ $lista[] | {co: "Lista startowa: \(.)", od: $lista_od,
            wpisz: "gotowe: \(. | split(":")[0] | split(",")[0] | split(" (")[0])", opcje: []} ]
