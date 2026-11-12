@@ -212,3 +212,21 @@ bash_regula() {
 @test "hook gh-plik-hook.sh na Bash: plik tresci PR i komentarzy tylko z /Users/Shared/sh (gh poza sandboxem)" {
   jq -e '.hooks.PreToolUse | any(.matcher == "Bash" and (.hooks[0].command == "/Users/Shared/sh/bin/gh-plik-hook.sh || exit 2"))' "$PROFIL" >/dev/null
 }
+
+@test "shctl db (lokalny Supabase) dozwolone i poza sandboxem; inne komendy shctl poza lista; surowe supabase w sandboxie" {
+  for c in "shctl db start --projekt app" "shctl db reset --projekt app" "shctl db migrate --projekt app" \
+    "shctl db test --projekt app" "shctl db status --projekt app --json" "/Users/Shared/sh/bin/shctl db stop --projekt app"; do
+    [ "$(bash_regula "$c")" = allow ] || { echo "nie dozwolone: $c ($(bash_regula "$c"))"; false; }
+  done
+  for c in "shctl task close 5" "shctl review run 7" "shctl adopt upublicznij --projekt app"; do
+    [ "$(bash_regula "$c")" = brak ] || { echo "dozwolone: $c ($(bash_regula "$c"))"; false; }
+  done
+  for c in "shctl db *" "/Users/Shared/sh/bin/shctl db *"; do
+    jq -e --arg c "$c" '.sandbox.excludedCommands | index($c)' "$PROFIL" >/dev/null || { echo "brak excluded $c"; false; }
+  done
+  [ "$(jq -r '[.sandbox.excludedCommands[] | select(startswith("supabase"))] | length' "$PROFIL")" -eq 0 ]
+  # Start, reset i test bazy tylko przez shctl db (surowe CLI w sandboxie: EPERM).
+  for c in "supabase start" "supabase db reset" "supabase test db"; do
+    [ "$(bash_regula "$c")" = brak ] || { echo "dozwolone: $c"; false; }
+  done
+}
