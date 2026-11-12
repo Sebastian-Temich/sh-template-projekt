@@ -87,6 +87,8 @@ case "${WERSJA:-1}" in
     exit 1
     ;;
 esac
+# Projekt przejęty (shctl adopt) ma przed specyfikacją etap 00-analiza.
+[ "$(fm_get "$KONFIG" pochodzenie)" != adopt ] || ETAPY="00-analiza $ETAPY"
 ETAP_WDROZENIA="$(fm_get "$KONFIG" etap_wdrozenia)"
 
 case "$ETAP_WDROZENIA" in
