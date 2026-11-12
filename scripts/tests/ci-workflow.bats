@@ -68,3 +68,17 @@ setup() {
   [ "$(yq -r '.jobs.e2e.steps[].run // ""' "$W/ci.yml" | grep -c 'timeout [0-9]*m')" -eq 2 ]
   yq -r '.jobs.e2e.steps[].run // ""' "$W/ci.yml" | grep -q '::error title='
 }
+
+@test "ci.yml: baza za zakresem baza (WZORCE_BAZA supabase/*), migracje, pgTAP, lint i advisors" {
+  [ "$(yq -r '.jobs.baza.if' "$W/ci.yml")" = "needs.check-dod.outputs.baza == 'true'" ]
+  [ "$(yq -r '.jobs["check-dod"].outputs.baza' "$W/ci.yml")" = '${{ steps.zakres.outputs.baza }}' ]
+  [ "$(yq -r '.jobs["check-dod"].steps[] | select(.id == "zakres") | .env.WZORCE_BAZA' "$W/ci.yml")" = 'supabase/*' ]
+  kroki="$(yq -r '.jobs.baza.steps[].run // ""' "$W/ci.yml")"
+  grep -q 'supabase start' <<<"$kroki"
+  grep -q 'supabase test db' <<<"$kroki"
+  grep -q 'supabase db lint --local' <<<"$kroki"
+  grep -q 'supabase db advisors --local' <<<"$kroki"
+  # Ta sama wersja CLI co staging.
+  [ "$(yq -r '.jobs.baza.steps[] | select(.uses // "" | test("^supabase/setup-cli@")) | .with.version' "$W/ci.yml")" = \
+    "$(yq -r '.jobs.migracje.steps[] | select(.uses // "" | test("^supabase/setup-cli@")) | .with.version' "$W/staging.yml")" ]
+}

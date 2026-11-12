@@ -6,6 +6,8 @@
 # - lint i test tylko na PR ze zmianą poza docs/ i *.md, nocą po świeżych commitach i ręcznie;
 # - e2e tylko przy zmianie kodu aplikacji (poza WZORCE_BEZ_E2E) i gdy jest playwright.config.*;
 #   przeglądarki z cache, kroki z własnym limitem czasu i komunikatem ::error zamiast przerwania joba;
+# - baza tylko przy zmianie w supabase/ (WZORCE_BAZA) i gdy jest supabase/config.toml: migracje na
+#   czystej bazie, pgTAP, lint i advisors (w sandboxie workera Supabase CLI nie startuje);
 # - po merge'u na main (i po commitach orkiestratora) tylko smoke: jeden job check-dod z gitleaks.
 # Testy skryptów szablonu (scripts/tests) działają tylko w repo sh-template-projekt (szablon.yml).
 # Zadanie szkieletu zastępuje kroki placeholderów, ale zostawia needs, if i timeout-minutes.
@@ -35,6 +37,7 @@ jobs:
     outputs:
       kod: ${{ steps.zakres.outputs.kod }}
       e2e: ${{ steps.zakres.outputs.e2e }}
+      baza: ${{ steps.zakres.outputs.baza }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -47,6 +50,7 @@ jobs:
           GLOWA: ${{ github.event.pull_request.head.sha }}
           WZORCE_DOCS: "docs/* *.md"
           WZORCE_BEZ_E2E: "scripts/* .claude/* .github/ISSUE_TEMPLATE/* .github/workflows/staging.yml .github/workflows/deploy-prod.yml"
+          WZORCE_BAZA: "supabase/*"
         run: bash scripts/ci-zakres.sh
       - name: DoD etapów
         run: bash scripts/check-dod.sh
@@ -137,6 +141,42 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
+  # Testy bazy (sh-kat-baza, sh-stack-supabase): lokalna baza Supabase nie startuje w sandboxie workera
+  # (Supabase CLI: EPERM przy zapisie ~/.supabase), więc migracje na czystej bazie i pgTAP działają tu.
+  # Runner potrzebuje Dockera (ubuntu-24.04 GitHuba go ma; runner serwera w repo prywatnym: sprawdź).
+  baza:
+    needs: check-dod
+    if: needs.check-dod.outputs.baza == 'true'
+    runs-on: ${{ fromJSON(vars.SH_RUNS_ON || '"ubuntu-24.04"') }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.121.0
+      - name: Migracje na czystej bazie i seed
+        id: start
+        # Tylko Postgres, auth i REST; reszta usług nie jest potrzebna do testów SQL.
+        run: |
+          kod=0
+          timeout 10m supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,mailpit,realtime,storage-api,postgres-meta || kod=$?
+          if [ "$kod" -ne 0 ]; then
+            echo "::error title=Migracje na czystej bazie::supabase start nie powiódł się (kod $kod). Szukaj pierwszego błędu SQL migracji albo seed.sql w logu tego kroku."
+          fi
+          exit "$kod"
+      - name: Testy pgTAP
+        run: |
+          if compgen -G "supabase/tests/*.sql" >/dev/null || compgen -G "supabase/tests/**/*.sql" >/dev/null; then
+            timeout 5m supabase test db
+          else
+            echo "::warning title=Brak testów pgTAP::supabase/tests nie ma plików .sql. Polityki RLS wymagają testów (sh-kat-baza, punkt 5)."
+          fi
+      - name: Lint schematu
+        if: (success() || failure()) && steps.start.outcome == 'success'
+        run: timeout 3m supabase db lint --local --fail-on error
+      - name: Advisors (bezpieczeństwo i wydajność)
+        if: (success() || failure()) && steps.start.outcome == 'success'
+        run: timeout 3m supabase db advisors --local --type all --level info --fail-on error
 
   # QA kamienia na stagingu: pełne e2e (chromium + webkit) z BASE_URL i Lighthouse, tylko dla PR z
   # gałęzi stage/08-qa i tylko gdy docs/konfiguracja.md ma staging_url. Lokalnie (sandbox Claude Code)

@@ -27,7 +27,7 @@ Stałe dla wszystkich projektów:
 | Node | LTS przez fnm |
 | Pakiety JS | Wyłącznie pnpm; skrypty budowania zależności tylko z `allowBuilds` w `pnpm-workspace.yaml` |
 | Python | uv |
-| Baza lokalnie | Supabase CLI, blok portów z `/Users/Shared/sh/porty.md` |
+| Baza | Supabase CLI w CI: job `baza` (zmiany w `supabase/`) uruchamia migracje na czystej bazie, pgTAP (`supabase/tests/`), `db lint` i `db advisors`. W sandboxie workera CLI nie działa (`EPERM` na `~/.supabase`). Porty w `config.toml`: blok z `/Users/Shared/sh/porty.md` |
 | Docker | Tylko dla usług (Supabase) |
 | Testy E2E | Playwright w wersji z `konfiguracja.md`, chromium + webkit, headless, `workers` z `konfiguracja.md`. Uruchamia je wyłącznie CI: job `e2e` na PR i `qa-staging` (PR z `stage/08-qa`, na `staging_url`, z Lighthouse). `playwright.config` bierze `baseURL` z `BASE_URL`, a `webServer` tylko bez `BASE_URL` |
 | Hosting | Z pola `hosting` w `konfiguracja.md` |
@@ -106,6 +106,9 @@ pętli, `$(...)`, heredoców, `cd` i przekierowań do pliku (szczegóły i przyk
 - Gałąź zadania aktualizujesz o `main` przez `gh pr update-branch NR_PR` i `git pull` (bez PR:
   `git pull --no-rebase origin main`), nie lokalnym `git merge`: ten działa w sandboxie, który nie
   pozwala zapisać plików wspólnych, i pada w połowie, gdy `main` je zmienia.
+- Lokalnej bazy nie ma: Supabase CLI w sandboxie kończy się `EPERM` (zapis `~/.supabase`), więc
+  migracji i testów SQL nie uruchamiasz lokalnie. Piszesz je, a job CI `baza` uruchamia migracje na
+  czystej bazie, pgTAP, `db lint` i `db advisors` (skille `sh-kat-baza`, `sh-stack-supabase`).
 - E2E i Lighthouse nie działają lokalnie (przeglądarki nie startują w sandboxie). Lokalnie: lint, typy,
   testy jednostkowe i build. Testy E2E piszesz, a uruchamia je CI; czerwony job `e2e` czytasz przez
   `gh run view RUN --log-failed` i poprawiasz w zakresie zadania.
