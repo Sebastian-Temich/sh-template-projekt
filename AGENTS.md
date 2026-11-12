@@ -27,7 +27,7 @@ Stałe dla wszystkich projektów:
 | Node | LTS przez fnm |
 | Pakiety JS | Wyłącznie pnpm; skrypty budowania zależności tylko z `allowBuilds` w `pnpm-workspace.yaml` |
 | Python | uv |
-| Baza | Supabase CLI w CI: job `baza` (zmiany w `supabase/`) uruchamia migracje na czystej bazie, pgTAP (`supabase/tests/`), `db lint` i `db advisors`. W sandboxie workera CLI nie działa (`EPERM` na `~/.supabase`). Porty w `config.toml`: blok z `/Users/Shared/sh/porty.md` |
+| Baza | Lokalnie `shctl db` (start, reset, test, stop; Supabase w Dockerze poza sandboxem, porty z bloku projektu w `/Users/Shared/sh/porty.md`, tylko baza lokalna); surowe Supabase CLI w sandboxie workera nie działa (`EPERM` na `~/.supabase`). Drugie sprawdzenie w CI: job `baza` (zmiany w `supabase/`) uruchamia migracje na czystej bazie, pgTAP (`supabase/tests/`), `db lint` i `db advisors`. Porty w `config.toml`: blok z `porty.md` |
 | Docker | Tylko dla usług (Supabase) |
 | Testy E2E | Playwright w wersji z `konfiguracja.md`, chromium + webkit, headless, `workers` z `konfiguracja.md`. Uruchamia je wyłącznie CI: job `e2e` na PR i `qa-staging` (PR z `stage/08-qa`, na `staging_url`, z Lighthouse). `playwright.config` bierze `baseURL` z `BASE_URL`, a `webServer` tylko bez `BASE_URL` |
 | Hosting | Z pola `hosting` w `konfiguracja.md` |
@@ -84,9 +84,9 @@ Worker działa w trybie `dontAsk` z `.claude/roles/worker/settings.json`: polece
 dozwolonych dostaje odmowę bez pytania. Jedno wywołanie Bash to jedna prosta komenda: bez `&&`, `;`,
 pętli, `$(...)`, heredoców, `cd` i przekierowań do pliku (szczegóły i przykłady: skill `sh-worker`).
 
-- Dozwolone: `git`, `gh`, `pnpm`, `npm`, `npx`, `node`, `uv`, `fnm list|current|exec`, lokalne `supabase` (init, start, stop,
-  status, migration, db reset/diff, gen types, test db), `gitleaks`, `bats`, `shellcheck`,
-  `bash scripts/check-dod.sh`, `shctl escalate`; `rm`, `mv`, `cp`, `mkdir`, `touch` w worktree;
+- Dozwolone: `git`, `gh`, `pnpm`, `npm`, `npx`, `node`, `uv`, `fnm list|current|exec`, lokalne `supabase` (init, migration, db diff,
+  gen types; w sandboxie kończą się `EPERM`), `shctl db` (lokalna baza), `gitleaks`, `bats`, `shellcheck`,
+  `bash scripts/check-dod.sh`, `shctl escalate`, `shctl db`; `rm`, `mv`, `cp`, `mkdir`, `touch` w worktree;
   pomocnicze `cat`, `head`, `tail`, `grep`, `wc`, `sort`, `uniq`, `cut`, `diff`, `echo`, `which`.
   Edycja `.env.example` jest dozwolona.
 - Zablokowane (krótka lista deny): sekrety i `.env*` poza `.env.example` (odczyt, edycja, komendy;
@@ -98,7 +98,7 @@ pętli, `$(...)`, heredoców, `cd` i przekierowań do pliku (szczegóły i przyk
   `gh issue close|edit|delete`, `gh gist`, `gh release upload`; `git -c`, `git -C`, `git config`,
   `--no-index`, `--exec-path`; `sudo`; `rm` poza worktree; `~/Documents`, `~/Desktop`, `~/Downloads`
   i iCloud (`~/Library/Mobile Documents`).
-- Sandbox: każde polecenie Bash poza `git push|fetch|pull`, `gh`, `shctl escalate` i `brew install` działa w sandboxie
+- Sandbox: każde polecenie Bash poza `git push|fetch|pull`, `gh`, `shctl escalate`, `shctl db` i `brew install` działa w sandboxie
   Claude Code. Zapis tylko w worktree, `$TMPDIR` i cache narzędzi (`~/Library/pnpm`, `~/.npm`,
   `~/.cache`, `~/Library/Caches`, katalogi blokad pnpm `/tmp/pnpm-*-502`), sieć tylko do GitHuba, rejestru npm i pobierania Playwrighta.
   Odmowa sandboxa (`EPERM`, `403` z proxy) to granica roli: nie obchodzisz jej, opisujesz w „Ryzykach”
@@ -106,9 +106,11 @@ pętli, `$(...)`, heredoców, `cd` i przekierowań do pliku (szczegóły i przyk
 - Gałąź zadania aktualizujesz o `main` przez `gh pr update-branch NR_PR` i `git pull` (bez PR:
   `git pull --no-rebase origin main`), nie lokalnym `git merge`: ten działa w sandboxie, który nie
   pozwala zapisać plików wspólnych, i pada w połowie, gdy `main` je zmienia.
-- Lokalnej bazy nie ma: Supabase CLI w sandboxie kończy się `EPERM` (zapis `~/.supabase`), więc
-  migracji i testów SQL nie uruchamiasz lokalnie. Piszesz je, a job CI `baza` uruchamia migracje na
-  czystej bazie, pgTAP, `db lint` i `db advisors` (skille `sh-kat-baza`, `sh-stack-supabase`).
+- Lokalna baza tylko przez `shctl db` z worktree zadania (Supabase CLI w sandboxie kończy się
+  `EPERM`): `shctl db start --projekt NAZWA`, `shctl db reset` (migracje i seedy od zera),
+  `shctl db test` (pgTAP), `shctl db status` (adres API i lokalne klucze), `shctl db stop`. Job CI
+  `baza` to drugie sprawdzenie (migracje na czystej bazie, pgTAP, `db lint`, `db advisors`; skille
+  `sh-kat-baza`, `sh-stack-supabase`). Odmowa `shctl db` (kod 4) trafia do „Ryzyk”, bez obchodzenia.
 - E2E i Lighthouse nie działają lokalnie (przeglądarki nie startują w sandboxie). Lokalnie: lint, typy,
   testy jednostkowe i build. Testy E2E piszesz, a uruchamia je CI; czerwony job `e2e` czytasz przez
   `gh run view RUN --log-failed` i poprawiasz w zakresie zadania.
@@ -211,6 +213,7 @@ Mechanikę wykonuje `/Users/Shared/sh/bin/shctl`. Agent decyduje i pisze treść
 | `shctl review run` | orkiestrator | Czysty worktree `../wt/review-NR` i review |
 | `shctl task close` | orkiestrator | Zamknięcie zadania i wpis w `CHANGELOG.md` |
 | `shctl escalate` | każdy agent | Eskalacja do właściciela |
+| `shctl db` | worker, orkiestrator | Lokalny Supabase projektu: start, reset, migrate, test (pgTAP), status, stop |
 
 shctl jest idempotentny i ma `--dry-run` oraz `--json`. Gdy brakuje komendy, wykonaj operację ręcznie
 i zapisz propozycję w sekcji „Propozycje dla systemu” raportu.
