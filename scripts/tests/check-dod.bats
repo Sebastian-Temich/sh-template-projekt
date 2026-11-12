@@ -398,3 +398,21 @@ Bez załączników.\
   run bash "$SKRYPT" "$ROOT"
   [[ "$output" != *"karty funkcji"* ]] || false
 }
+
+@test "projekt przejety (pochodzenie: adopt): DoD 00-analiza sprawdzany, done z niezaznaczonym polem to blad" {
+  zamien "$ROOT/docs/konfiguracja.md" 's/^tryb_procesu: \(.*\)/tryb_procesu: \1\
+pochodzenie: adopt/'
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"docs/00-analiza/DoD.md"* ]]
+  mkdir -p "$ROOT/docs/00-analiza"
+  printf -- '---\netap: 00-analiza\nstatus: in-progress\niteracja: 0\n---\n\n# DoD\n\n## Dokumentacja\n\n- [ ] punkt\n\n## Funkcjonalność\n\n- [ ] punkt\n\n## Checklisty jakości\n\n- [ ] punkt\n\n## Checkpoint\n\n- [ ] punkt\n' >"$ROOT/docs/00-analiza/DoD.md"
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  status_etapu 00-analiza done
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -ne 0 ]
+  zaznacz_wszystko 00-analiza
+  run bash "$SKRYPT" "$ROOT"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+}

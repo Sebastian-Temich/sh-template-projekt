@@ -138,6 +138,12 @@ case "${WERSJA:-1}" in
   1) ETAPY="00-intake 04-architektura 05-plan 06-zadania 08-qa wydanie" ;;
   *) ETAPY="00-intake 04-plan 06-zadania 08-qa wydanie" ;;
 esac
+# Projekt przejęty (shctl adopt) zaczyna od etapu 00-analiza.
+POCHODZENIE="$(fm_get "$KONFIG" pochodzenie)"
+[ "$POCHODZENIE" != adopt ] || ETAPY="00-analiza $ETAPY"
+# Projekt z Lovable (adopt.lovable: true): zasada w „Zasadach projektu” Projekt.md.
+LOVABLE="$(awk 'NR == 1 && $0 != "---" { exit } NR > 1 && $0 == "---" { exit }
+  /^adopt:/ { a = 1; next } a && /^[^ ]/ { a = 0 } a && /^  lovable:[ \t]*true/ { print "true" }' "$KONFIG")"
 MAX_LOCAL="$(fm_get "$KONFIG" max_local)"
 [ -n "$MAX_LOCAL" ] || MAX_LOCAL="$(fm_get "$SH_DIR/konfiguracja.md" max_local)"
 case "$MAX_LOCAL" in "" | *[!0-9]*) MAX_LOCAL=2 ;; esac
@@ -218,6 +224,7 @@ fi
 
 dok() { [ -f "$DOCS/$1" ] && printf '%s\n' "$1" || true; }
 {
+  dok 00-analiza/raport.md
   dok 00-intake/specyfikacja.md
   for f in "$DOCS"/00-intake/funkcje/W-*.md; do [ ! -e "$f" ] || echo "00-intake/funkcje/$(basename "$f")"; done
   dok 00-intake/lista-startowa.md
@@ -289,7 +296,7 @@ jq -n \
         else "\($m / 1440 | floor) d" + (if ($m % 1440) >= 60 then " \(($m % 1440) / 60 | floor) h" else "" end) end end;
   def ostatnio: sort_by(.zamkniete, .nr) | reverse;
   def nazwa_etapu:
-    {"00-intake": "Specyfikacja", "04-plan": "Plan", "04-architektura": "Architektura",
+    {"00-analiza": "Analiza", "00-intake": "Specyfikacja", "04-plan": "Plan", "04-architektura": "Architektura",
      "05-plan": "Plan", "06-zadania": "Rozpisanie zadań", "08-qa": "QA", "wydanie": "Odbiór i wydanie"}[.] // .;
   def pass_dla_heada:
     .headRefOid as $h
@@ -519,7 +526,8 @@ jq -r --argjson ile "$OSTATNICH" '
   "## Dokumenty",
   "",
   ([.dokumenty[] | select(test("^00-intake/funkcje/") | not)] | .[] |
-    if . == "00-intake/specyfikacja.md" then "- [Specyfikacja](\(.))"
+    if . == "00-analiza/raport.md" then "- [Raport analizy](\(.))"
+    elif . == "00-intake/specyfikacja.md" then "- [Specyfikacja](\(.))"
     elif . == "00-intake/lista-startowa.md" then "- [Lista startowa](\(.))"
     elif test("plan\\.md$") then "- [Plan](\(.))"
     elif . == "04-architektura/architektura.md" then "- [Architektura](\(.))"
@@ -551,6 +559,10 @@ zloz_projekt() {
   printf '\n# %s\n\n' "$NAZWA"
   printf '<!-- Plik generuje scripts/sync-status.sh przy każdej zmianie stanu. Nie edytuj go ręcznie. -->\n\n'
   cat "$TMP/tresc.md"
+  if [ "$LOVABLE" = true ]; then
+    printf '\n## Zasady projektu\n\n'
+    printf -- '- Projekt z Lovable: nie publikujemy w Lovable bez Twojej decyzji (wpis w decyzjach). Synchronizacja Lovable z GitHubem zostaje włączona.\n'
+  fi
 }
 
 # --- historia.md --------------------------------------------------------------------------------

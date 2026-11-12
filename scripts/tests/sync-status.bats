@@ -388,3 +388,36 @@ EOF
   run sync --dane "$D"
   grep -qF '### Gotowe do startu (2)' "$(P)"
 }
+
+# Projekt przejęty (shctl adopt): etap 00-analiza przed specyfikacją, raport w dokumentach, zasada Lovable.
+adopt() {
+  konfig 'pochodzenie: adopt'
+  printf 'adopt:\n  repo: acme/app\n  lovable: %s\n' "$1" >"$ROOT/x"
+  awk -v f="$ROOT/x" '{ print } /^pochodzenie: / { while ((getline l < f) > 0) print l }' "$ROOT/docs/konfiguracja.md" >"$ROOT/y" &&
+    mv "$ROOT/y" "$ROOT/docs/konfiguracja.md"
+  mkdir -p "$ROOT/docs/00-analiza"
+  printf -- '---\netap: 00-analiza\nstatus: in-progress\niteracja: 0\n---\n\n# DoD\n\n- [ ] punkt\n' >"$ROOT/docs/00-analiza/DoD.md"
+  printf '# Analiza projektu: demo\n' >"$ROOT/docs/00-analiza/raport.md"
+}
+
+@test "adopt: etap Analiza w toku, raport analizy w dokumentach, zasada Lovable w Projekt.md" {
+  adopt true
+  run sync
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  grep -q '^- \*\*Etap:\*\* Analiza' "$(P)"
+  grep -qF -- '- [Raport analizy](00-analiza/raport.md)' "$(P)"
+  grep -qx '## Zasady projektu' "$(P)"
+  grep -q 'nie publikujemy w Lovable bez Twojej decyzji' "$(P)"
+}
+
+@test "adopt bez Lovable: bez sekcji Zasady projektu; projekt zwykly bez etapu Analiza" {
+  adopt false
+  run sync
+  [ "$status" -eq 0 ]
+  ! grep -qx '## Zasady projektu' "$(P)" || false
+  rm -rf "$ROOT/docs/00-analiza"
+  cp "$BATS_TEST_DIRNAME/dane/docs/konfiguracja.md" "$ROOT/docs/konfiguracja.md"
+  run sync
+  [ "$status" -eq 0 ]
+  ! grep -q 'Analiza' "$(P)" || false
+}
