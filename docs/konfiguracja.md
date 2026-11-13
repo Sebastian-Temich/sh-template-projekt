@@ -4,8 +4,11 @@ etap_wdrozenia: A
 tryb_procesu: M
 odbior_S: reczny
 # Początek bieżącego zlecenia (UTC, np. 2026-12-01T09:00:00Z) dla „Zrobione” i postępu zadań w
-# Projekt.md. Wpisuje orkiestrator przy kolejnym zleceniu M w tym projekcie; puste: od początku.
+# Projekt.md. Wpisuje orkiestrator przy zleceniu S, a przy kolejnym zleceniu M shctl cykl new; puste:
+# od początku.
 zlecenie_od: ""
+# cykl, cykl_od: bieżący cykl etapów trybu M (np. M2-bezpieczenstwo) i jego start (UTC). Ustawia je
+# shctl cykl new; bez pól projekt jest w pierwszym cyklu (M1), a zamknięte cykle są w docs/cykle/.
 # max_local: limit workerów Maca jest w /Users/Shared/sh/konfiguracja.md (domyślnie 2). Wpis tutaj
 # może go tylko obniżyć dla tego projektu, np. max_local: 1.
 max_review_queue: 3
@@ -49,6 +52,7 @@ hosting:
 | `tryb_procesu` | `S`, `M` albo `L` (L od etapu B). Nowy projekt zaczyna od M lub L. Proponuje `sh-intake`, akceptuje właściciel |
 | `odbior_S` | Odbiór zleceń S: `reczny` (domyślnie; merge po Twoim „odbieram #NR”) albo `auto_bez_zmian_widocznych` (zlecenie z etykietą `widoczne:nie`, bez zmian widocznych dla użytkownika, merguje się po PASS i zielonym CI, a Ty dostajesz powiadomienie). Zlecenie ze zmianą widoczną zawsze czeka na Twój odbiór |
 | `zlecenie_od` | Początek bieżącego zlecenia (UTC). `Projekt.md` pokazuje w „Zrobione” i w postępie zadań tylko zadania od tej chwili, a starsze są w `historia.md`. Puste: od początku projektu. Zlecenia S po zleceniu M i przebiegi dryrun (`metryki.md`) rozpoznaje `sync-status.sh` sam |
+| `cykl`, `cykl_od` | Bieżący cykl etapów trybu M i jego start (UTC); ustawia `shctl cykl new` przy kolejnym zleceniu M, który przenosi dokumenty etapów poprzedniego cyklu do `docs/cykle/NAZWA/`. Brak pól: pierwszy cykl (M1) |
 | `max_local` | Opcjonalne obniżenie limitu workerów dla projektu; limit Maca (domyślnie 2) jest w `/Users/Shared/sh/konfiguracja.md` |
 | `max_review_queue` | Liczba PR czekających na review, przy której dispatch staje |
 | `min_wolne_gb` | Minimum wolnego miejsca na dysku |

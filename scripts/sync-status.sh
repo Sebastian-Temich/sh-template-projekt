@@ -13,6 +13,9 @@
 # Bieżące zlecenie: zadania od zlecenie_od z docs/konfiguracja.md albo od ostatniego „Przebieg
 # dryrun” w docs/metryki.md; bez przebiegu ostatnia seria zadań tryb:S po zamkniętych zadaniach
 # trybu M to osobne zlecenie S. Otwarte zadania należą do bieżącego zlecenia zawsze.
+# Cykle etapów (shctl cykl new): bieżący z pól cykl i cykl_od konfiguracji, zamknięte z
+# docs/cykle/NAZWA/cykl.md. Projekt.md pokazuje bieżący cykl i linki do poprzednich, a lista zadań
+# w historia.md ma kolumnę Cykl (cykl, w którym zadanie powstało; „· S” dla zleceń S).
 # Wywołuje go shctl po każdej zmianie stanu (orkiestrator, na main). Nic nie commituje.
 # Użycie: scripts/sync-status.sh [--dry-run] [--repo WLASCICIEL/NAZWA] [--nazwa PROJEKT]
 #           [--dane KATALOG] [--wyjscie KATALOG]
@@ -164,6 +167,17 @@ if [ -f "$DOCS/metryki.md" ]; then
     END { if (d != "") print d "T" g ":00Z" }' "$DOCS/metryki.md")"
 fi
 
+CYKL="$(fm_get "$KONFIG" cykl)"
+CYKL_OD="$(fm_get "$KONFIG" cykl_od)"
+: >"$TMP/cykle.jsonl"
+for f in "$DOCS"/cykle/*/cykl.md; do
+  [ -e "$f" ] || continue
+  n="$(fm_get "$f" cykl)"
+  [ -n "$n" ] || n="$(basename "$(dirname "$f")")"
+  jq -nc --arg n "$n" --arg o "$(fm_get "$f" od)" --arg d "$(fm_get "$f" do)" \
+    --arg k "cykle/$(basename "$(dirname "$f")")/cykl.md" '{nazwa:$n, od:$o, do:$d, plik:$k}' >>"$TMP/cykle.jsonl"
+done
+
 : >"$TMP/etapy.jsonl"
 for e in $ETAPY; do
   f="$DOCS/$e/DoD.md"
@@ -255,6 +269,7 @@ jq -n \
   --slurpfile issues "$TMP/issues.json" --slurpfile prs "$TMP/prs.json" --slurpfile otw "$TMP/otwarte.json" \
   --slurpfile etapy <(jq -s . "$TMP/etapy.jsonl") --slurpfile esk <(jq -s . "$TMP/eskalacje.jsonl") \
   --slurpfile dok "$TMP/dokumenty.json" --slurpfile wstrz "$TMP/wstrzymania.json" \
+  --slurpfile cykle <(jq -s . "$TMP/cykle.jsonl") --arg cykl "$CYKL" --arg cykl_od "$CYKL_OD" \
   --rawfile lista "$TMP/lista.txt" --arg lista_od "$LISTA_OD" \
   --arg nazwa "$NAZWA" --arg tryb "${TRYB:-M}" --arg odbior "$ODBIOR_S" \
   --arg zlecenie_od "$ZLECENIE_OD" --arg przebieg_od "$PRZEBIEG_OD" \
@@ -344,12 +359,18 @@ jq -n \
   | ($z | map(select(.status == "todo") | . as $t
       | . + {czeka_na: [.zal[] | select(($mapa[tostring] // null) as $i
           | $i == null or ($i.state == "OPEN") or ($i.stateReason == "NOT_PLANNED"))]})) as $todo
+  # Cykle: zamknięte z docs/cykle/ i bieżący; zadanie należy do ostatniego cyklu rozpoczętego przed
+  # jego utworzeniem (pierwszy cykl ma od puste: od początku projektu).
+  | (($cykle[0] | sort_by(.od | iso)) + (if $cykl != "" then [{nazwa: $cykl, od: $cykl_od, plik: null}] else [] end)) as $lc
+  | ($z | map(. as $t | . + {cykl: (if ($lc | length) == 0 then null
+      else ([$lc[] | select((.od | iso) == "" or $t.utworzone == "" or (.od | iso) <= $t.utworzone)] | last // $lc[0]).nazwa end)})) as $z
   # Etapy: etap przygotowania w todo przy zadaniach zlecenia jest pominięty (np. przebieg dryrun
   # z zadaniami z zadania.yaml), tak jak status pominiety. Przebieg dryrun kończy się na QA, więc
-  # wydanie w todo też jest wtedy pominięte.
+  # wydanie w todo też jest wtedy pominięte. W kolejnym cyklu (shctl cykl new) etap w todo to
+  # następny krok cyklu, nie pominięcie, choć otwarte zadania S z poprzedniego zlecenia trwają.
   | (($biezace_bez_anul | length) > 0) as $sa_zadania
   | ($etapy[0] | map(. + {pominiety: (.status == "pominiety"
-      or ($sa_zadania and .status == "todo" and (.etap | IN("08-qa", "wydanie") | not))
+      or ($cykl == "" and $sa_zadania and .status == "todo" and (.etap | IN("08-qa", "wydanie") | not))
       or ($przebieg_od != "" and .etap == "wydanie" and .status == "todo"))})) as $et
   | ([$et[] | select(.pominiety | not)]) as $et_akt
   | ($esk[0] | map(select(.status == "otwarta"))) as $otwarte_esk
@@ -415,6 +436,8 @@ jq -n \
        | "ok. \(slownie($m * 60)) pracy agentów (\($pozostale) zadań, średnio \(slownie($srednia * 60)) na zadanie, \($rownolegle) równolegle; orientacyjnie)" end) as $szac
   | {
       nazwa: $nazwa, tryb: $tryb, etap: $etap, przebieg: ($przebieg_od != ""), nastepny: $nastepny, szacunek: $szac,
+      cykl: (if $cykl != "" then {nazwa: $cykl, od: ($cykl_od | iso)} else null end),
+      cykle_zamkniete: ($cykle[0] | sort_by(.od | iso)), z_cyklami: (($lc | length) > 0),
       postep_etapy: $postep_etapy, postep_zadan: $postep_zadan,
       czeka: $czeka, w_toku: $w_toku, gotowe: $gotowe, zaplanowane: $zaplanowane,
       zrobione: ($zrobione_b | ostatnio),
@@ -463,6 +486,9 @@ jq -r --argjson ile "$OSTATNICH" '
   | "## Gdzie jesteśmy",
   "",
   "- **Etap:** \(.etap.opis)",
+  (if .cykl then "- **Cykl:** \(.cykl.nazwa)\(if .cykl.od != "" then " (od \(.cykl.od[0:10]))" else "" end)"
+     + (if (.cykle_zamkniete | length) > 0 then "; wcześniejsze: " + ([.cykle_zamkniete[] | "[\(.nazwa)](\(.plik))"] | join(", ")) else "" end)
+   else empty end),
   "- **Postęp:** Etapy \(if .postep_etapy then "\(.postep_etapy.x)/\(.postep_etapy.y)" else "–" end) · Zadania \(.postep_zadan.x)/\(.postep_zadan.y)"
     + (if .zadania_lacznie > .postep_zadan.y then " w bieżącym \($j.w) (łącznie \(.zadania_lacznie))" else "" end),
   "- **Co się dzieje:** " + (if (.w_toku | length) > 0
@@ -536,6 +562,8 @@ jq -r --argjson ile "$OSTATNICH" '
     else "- \(link(.))" end),
   (([.dokumenty[] | select(test("^00-intake/funkcje/"))]) as $k
     | if ($k | length) > 0 then "- Karty funkcji: " + ([$k[] | link(.)] | join(", ")) else empty end),
+  (if (.cykle_zamkniete | length) > 0 then
+     "- Poprzednie cykle: " + ([.cykle_zamkniete[] | "[\(.nazwa)](\(.plik))"] | join(", ")) else empty end),
   "- [Historia](historia.md): punkt przekazania, dziennik etapów, wszystkie zadania"
 ' "$TMP/stan.json" >"$TMP/tresc.md"
 
@@ -544,6 +572,7 @@ frontmatter() {
     "---",
     "projekt: \(.nazwa)",
     "tryb: \(.tryb)",
+    (if .cykl then "cykl: \(.cykl.nazwa | tojson)" else empty end),
     "etap_opis: \(.etap.opis | tojson)",
     "postep_etapy: \(if .postep_etapy then "\(.postep_etapy.x)/\(.postep_etapy.y)" else "-" end | tojson)",
     "postep_zadania: \("\(.postep_zadan.x)/\(.postep_zadan.y)" | tojson)",
@@ -573,7 +602,11 @@ jq -r '
   "",
   "## Wszystkie zadania zrobione (\(.wszystkie_zrobione | length))",
   "",
-  (if (.wszystkie_zrobione | length) == 0 then "Jeszcze nic." else
+  (if (.wszystkie_zrobione | length) == 0 then "Jeszcze nic."
+   elif .z_cyklami then
+    "| Zadanie | Cykl | Kamień | PR | Zamknięte |", "|---|---|---|---|---|",
+    (.wszystkie_zrobione[] | "| #\(.nr) \(.tytul | komorka) | \(.cykl // "-")\(if .s then " · S" else "" end) | \(.kamien) | \(if .pr then "#\(.pr)" else "-" end) | \(if .zamkniete != "" then .zamkniete[0:10] else "-" end) |")
+   else
     "| Zadanie | Kamień | PR | Zamknięte |", "|---|---|---|---|",
     (.wszystkie_zrobione[] | "| #\(.nr) \(.tytul | komorka) | \(.kamien) | \(if .pr then "#\(.pr)" else "-" end) | \(if .zamkniete != "" then .zamkniete[0:10] else "-" end) |") end),
   (if (.wszystkie_anulowane | length) > 0 then
