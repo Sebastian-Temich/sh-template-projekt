@@ -310,6 +310,41 @@ EOF
   grep -qF 'Wcześniejsze zlecenia (2 zadań)' "$(P)"
 }
 
+@test "kolejny cykl (shctl cykl new): biezacy cykl w Projekt.md, etap todo przy otwartym S, kolumna Cykl w historii" {
+  zamkniete 3 2
+  jq '. + [
+    {number: 7, title: "RLS", state: "CLOSED", stateReason: "COMPLETED", labels: [], milestone: {title: "M2 RLS"},
+     body: "", createdAt: "2026-11-07T10:00:00Z", closedAt: "2026-11-08T10:00:00Z"},
+    {number: 102, title: "E2E", state: "OPEN", labels: [{name: "tryb:S"}, {name: "status:in-progress"}], milestone: null,
+     body: "", createdAt: "2026-11-05T12:00:00Z"}]' "$D/issues.json" >"$D/x" && mv "$D/x" "$D/issues.json"
+  for e in 00-intake 04-plan 06-zadania 08-qa wydanie; do etap "$e" todo; done
+  mkdir -p "$ROOT/docs/cykle/M1"
+  printf -- '---\ncykl: M1\nod: ""\ndo: "2026-11-06T00:00:00Z"\n---\n\n# Cykl M1\n' >"$ROOT/docs/cykle/M1/cykl.md"
+  konfig 'cykl: M2-bezpieczenstwo'
+  konfig 'cykl_od: "2026-11-06T00:00:00Z"'
+  konfig 'zlecenie_od: "2026-11-06T00:00:00Z"'
+  run sync --dane "$D"
+  [ "$status" -eq 0 ]
+  [ "$(fm cykl)" = '"M2-bezpieczenstwo"' ]
+  grep -qxF -- '- **Etap:** Specyfikacja' "$(P)"
+  grep -qxF -- '- **Cykl:** M2-bezpieczenstwo (od 2026-11-06); wcześniejsze: [M1](cykle/M1/cykl.md)' "$(P)"
+  grep -qxF -- '- Poprzednie cykle: [M1](cykle/M1/cykl.md)' "$(P)"
+  grep -qF 'Etapy 0/5' "$(P)"
+  grep -qxF '| Zadanie | Cykl | Kamień | PR | Zamknięte |' "$(H)"
+  grep -qF '| #1 Zadanie 1 | M1 | M1 |' "$(H)"
+  grep -qF '| #100 Poprawka 100 | M1 · S | - |' "$(H)"
+  grep -qF '| #7 RLS | M2-bezpieczenstwo | M2 RLS |' "$(H)"
+}
+
+@test "bez cykli: historia bez kolumny Cykl, Projekt.md bez linii Cykl" {
+  zamkniete 2
+  run sync --dane "$D"
+  [ "$status" -eq 0 ]
+  grep -qxF '| Zadanie | Kamień | PR | Zamknięte |' "$(H)"
+  ! grep -qF '**Cykl:**' "$(P)" || false
+  ! grep -q '^cykl:' "$(P)" || false
+}
+
 @test "migracja: status.md znika, historia.md przejmuje punkt przekazania i dziennik" {
   rm "$(P)" "$(H)"
   printf -- '---\nzadania_todo: 0\n---\n\n# Status projektu\n\n## Bieżący etap\n\n(brak)\n\n## Punkt przekazania\n\nKamień M1 zakończony.\n\n## Dziennik etapów\n\n- 2026-11-05 `00-intake`: done\n' >"$ROOT/docs/status.md"
